@@ -1,0 +1,29 @@
+/* Responsive and reduced-motion media queries (unchanged, kept last in cascade order) */
+@media(max-width:1080px){
+  .hero{grid-template-columns:1fr;padding-top:120px}
+  .lead{max-width:640px}
+  .scene{height:780px;max-width:640px;margin:0 auto;width:100%}
+  .strip-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:860px){
+  .links{position:absolute;top:calc(100% + 10px);left:0;right:0;flex-direction:column;padding:12px;border-radius:24px;
+    background:rgba(250,246,239,.96);backdrop-filter:blur(18px);box-shadow:var(--shadow-3d);opacity:0;pointer-events:none;transform:translateY(-10px);transition:.35s var(--ease)}
+  .links.open{opacity:1;pointer-events:auto;transform:none}
+  .burger{display:flex}
+  .signin{display:none}
+}
+@media(max-width:640px){
+  .nav .btn-coral{padding:10px 16px;font-size:13.5px}
+  .scene{perspective:none;height:auto;transform:none}
+  .stage{position:relative;transform:none!important;display:grid;gap:18px}
+  .halo,.badge-slot,.spot{display:none}
+  .slot{position:relative!important;inset:auto!important;width:100%!important;transform:none;animation:rise .9s var(--ease) forwards;animation-delay:var(--d)}
+  .card,.card:hover{transform:none}
+  .strip-grid{grid-template-columns:1fr}
+  .how .lbl{width:100%}
+  .step+.step::before{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+  h1 .w,.rise,.slot,.logo .st,.logo .pop,.logo .halo2{opacity:1!important;transform:none!important;filter:none!important;stroke-dashoffset:0!important}
+}
