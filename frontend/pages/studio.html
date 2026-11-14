@@ -25,39 +25,86 @@
   <!-- Studio Header & Action Toolbar -->
   <div class="studio-head">
     <div class="studio-head-left">
-      <p class="page-kicker">Workflow · Step 4</p>
+      <div class="studio-head-meta">
+        <p class="page-kicker">Workflow · Step 4</p>
+        <div class="status-badge-wrap">
+          <span class="dirty-badge" id="dirtyFlag" hidden>● Unsaved changes</span>
+          <span class="saved-badge" id="savedBadge">✓ Saved</span>
+        </div>
+      </div>
       <h1 class="page-title">Make Your Meeting Presentation</h1>
       <div class="pres-title-inline-wrap">
         <span class="pres-title-display" id="presTitleDisplay">Meeting Presentation</span>
-        <button type="button" class="btn btn-ghost" id="renamePresBtn" style="padding:2px 8px;font-size:11px;height:24px;" title="Rename Presentation">✏️ Rename</button>
+        <button type="button" class="btn btn-ghost" id="renamePresBtn" title="Rename Presentation">
+          <svg class="btn-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>Rename</span>
+        </button>
       </div>
       <p class="page-lead">Turn your research into a presentation that makes every conversation count.</p>
     </div>
     <div class="studio-actions">
-      <div class="status-badge-wrap">
-        <span class="dirty-badge" id="dirtyFlag" hidden>● Unsaved changes</span>
-        <span class="saved-badge" id="savedBadge">✓ Saved</span>
-      </div>
-      <button type="button" class="btn btn-ghost" id="undoBtn" disabled title="Undo (Ctrl+Z)">Undo</button>
-      <button type="button" class="btn btn-ghost" id="redoBtn" disabled title="Redo (Ctrl+Y)">Redo</button>
-      <button type="button" class="btn btn-ghost" id="themeBtn">
-        <span class="theme-dot" id="themeDot"></span>
-        <span id="themeBtnLabel">Theme</span>
+      <!-- Row 1: Undo | Redo | Theme -->
+      <button type="button" class="btn btn-ghost btn-toolbar-action" id="undoBtn" disabled title="Undo (Ctrl+Z)">
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        <span>Undo</span>
       </button>
-      <button type="button" class="btn btn-ghost" id="addSlideBtn">+ Add Slide</button>
-      <button type="button" class="btn btn-ghost" id="configBtn">⚙️ Setup</button>
-      <button type="button" class="btn btn-ghost" id="historyBtn" title="View Version History">⏱️ History</button>
-      <button type="button" class="btn btn-ghost" id="previewBtn">Preview Presentation</button>
-      <button type="button" class="btn btn-ghost" id="saveBtn">Save Presentation</button>
-      <button type="button" class="btn btn-coral" id="exportBtn">Export / PowerPoint</button>
+      <button type="button" class="btn btn-ghost btn-toolbar-action" id="redoBtn" disabled title="Redo (Ctrl+Y)">
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <span>Redo</span>
+      </button>
+      <button type="button" class="btn btn-ghost btn-toolbar-action" id="themeBtn" title="Select Design Theme">
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/></svg>
+        <span class="theme-dot" id="themeDot"></span>
+        <span class="btn-label-text" id="themeBtnLabel">Theme</span>
+      </button>
+
+      <!-- Row 2: Add Slide | Setup | History -->
+      <button type="button" class="btn btn-ghost btn-toolbar-action" id="addSlideBtn" title="Add New Slide">
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span>Add Slide</span>
+      </button>
+      <button type="button" class="btn btn-ghost btn-toolbar-action" id="configBtn" title="Presentation Setup">
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Setup</span>
+      </button>
+      <button type="button" class="btn btn-ghost btn-toolbar-action" id="historyBtn" title="View Version History">
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>History</span>
+      </button>
+
+      <!-- Row 3: Preview | Save | Export PPTX -->
+      <button type="button" class="btn btn-ghost btn-toolbar-action" id="previewBtn" title="Preview Presentation (Full Screen)">
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="btn-label-desktop">Preview Presentation</span>
+        <span class="btn-label-mobile">Preview</span>
+      </button>
+      <button type="button" class="btn btn-ghost btn-toolbar-action btn-save-action" id="saveBtn" title="Save Presentation">
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span class="btn-label-desktop">Save Presentation</span>
+        <span class="btn-label-mobile">Save</span>
+      </button>
+      <button type="button" class="btn btn-coral btn-toolbar-action btn-export-action" id="exportBtn" title="Export Presentation">
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span class="btn-label-desktop">Export / PowerPoint</span>
+        <span class="btn-label-mobile">Export PPTX</span>
+      </button>
     </div>
   </div>
 
   <!-- Mobile View Switcher Tabs -->
   <div class="studio-tabs" role="tablist">
-    <button type="button" class="tab-btn on" data-panel="chatPanel">AI Chat</button>
-    <button type="button" class="tab-btn" data-panel="editorPanel">Slide Editor</button>
-    <button type="button" class="tab-btn" data-panel="navPanel">Slides (<span id="mobileSlideCount">7</span>)</button>
+    <button type="button" class="tab-btn on" data-panel="chatPanel">
+      <svg class="tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M3 5h4"/><path d="M19 17v4"/><path d="M17 19h4"/></svg>
+      <span>AI Chat</span>
+    </button>
+    <button type="button" class="tab-btn" data-panel="editorPanel">
+      <svg class="tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      <span>Slide Editor</span>
+    </button>
+    <button type="button" class="tab-btn" data-panel="navPanel">
+      <svg class="tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+      <span>Slides (<span id="mobileSlideCount">7</span>)</span>
+    </button>
   </div>
 
   <!-- Three-Panel Interactive Workspace -->
