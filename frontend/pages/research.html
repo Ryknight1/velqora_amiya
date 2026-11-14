@@ -26,39 +26,65 @@
   <div class="page-wrap">
     <p class="page-kicker">Workflow · Step 1</p>
     <h1 class="page-title">New Research</h1>
-    <p class="page-lead">Enter who you are meeting. VelQora researches recent public information, verifies claims, and prepares a briefing.</p>
+    <p class="page-lead">Enter who you are meeting. VelQora researches recent public information, verifies claims with timestamped sources, and prepares your briefing.</p>
+
+    <div class="active-ctx-banner" id="activeBanner" hidden>
+      <div>
+        <span>Active research loaded for <strong id="activeEntityName"></strong>.</span>
+      </div>
+      <div>
+        <a id="activeIntelLink" href="intelligence.html">View Intelligence →</a>
+      </div>
+    </div>
+
     <form class="research-card" id="researchForm" novalidate>
       <div class="field">
-        <label for="rName">Company or Person Name</label>
-        <input id="rName" name="name" maxlength="120" required autocomplete="organization" placeholder="e.g. Aurelia Systems">
+        <label for="rName">Company or Person Name <span class="req">*</span></label>
+        <input id="rName" name="name" maxlength="120" required autocomplete="organization" placeholder="e.g. Aurelia Systems or Dr. Elena Vance">
+        <span class="field-hint">We search recent public news, leadership profiles, and developments across the last 30 days.</span>
       </div>
+
       <div class="field">
         <label for="rUrl">Company Website or LinkedIn URL (optional)</label>
-        <input id="rUrl" name="url" maxlength="300" inputmode="url" placeholder="https://…">
+        <input id="rUrl" name="url" maxlength="300" inputmode="url" placeholder="https://example.com or linkedin.com/company/…">
+        <span class="field-hint">Helps target official domain announcements and verified profiles.</span>
       </div>
+
       <div class="research-grid">
         <div class="field">
-          <label for="rTime">Meeting Date and Time</label>
-          <input id="rTime" name="meeting_time" maxlength="80" placeholder="Fri, 14 Nov · 11:00">
+          <label for="rTime">Meeting Date &amp; Time (optional)</label>
+          <input id="rTime" name="meeting_time" maxlength="80" placeholder="e.g. Fri, 14 Nov · 11:00 AM">
         </div>
         <div class="field">
           <label for="rType">Entity Type</label>
           <select id="rType" name="entity_type">
-            <option value="auto">Auto detect</option>
+            <option value="auto" selected>Auto detect</option>
             <option value="company">Company</option>
             <option value="person">Person</option>
           </select>
         </div>
       </div>
+
       <div class="field">
-        <label for="rPurpose">Meeting Purpose</label>
-        <input id="rPurpose" name="purpose" maxlength="200" placeholder="Partnership, sales, investor briefing…">
+        <label for="rPurpose">Meeting Purpose (optional)</label>
+        <input id="rPurpose" name="purpose" maxlength="200" placeholder="e.g. Strategic partnership, executive briefing, sales discussion…">
+        <span class="field-hint">Tailors the strategic talking points, questions, and risk analysis.</span>
       </div>
-      <button class="btn btn-coral" id="goBtn" type="submit">Start Research</button>
-      <div class="stage-list" id="stageList" aria-live="polite"></div>
-      <div class="research-progress" id="prog" hidden><i></i></div>
-      <p class="vq-msg" id="vqMsg" role="alert" hidden></p>
+
+      <button class="btn btn-coral btn-start-research mag" id="goBtn" type="submit">Start Research <span class="arr">→</span></button>
+
+      <div class="research-status-wrap" id="statusWrap" hidden>
+        <div class="progress-meta">
+          <span class="stage-msg" id="stageMsg">Preparing research…</span>
+          <span class="stage-pct" id="stagePct">0%</span>
+        </div>
+        <div class="research-progress" id="prog"><i id="progBar"></i></div>
+        <div class="stage-list" id="stageList" aria-live="polite"></div>
+      </div>
+
+      <div class="vq-msg" id="vqMsg" role="alert" hidden></div>
     </form>
+
     <div class="flow-nav">
       <a class="btn btn-ghost" href="index.html">← Home</a>
       <a class="btn btn-ghost" id="nextIntel" href="intelligence.html">Intelligence →</a>

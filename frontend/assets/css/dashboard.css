@@ -1,18 +1,21 @@
 /* Compact homepage dashboard */
-.hero-compact{min-height:auto;grid-template-columns:1fr;gap:20px;padding:108px 0 28px;align-items:start}
-.hero-compact h1{font-size:clamp(32px,4.2vw,48px);line-height:1.08}
-.hero-compact .lead{margin-top:12px;max-width:560px;font-size:15.5px;line-height:1.55}
-.hero-compact .cta{margin-top:18px}
-.hero-compact .cta .btn{padding:13px 22px;font-size:15px}
-.hero-compact .trust{margin-top:18px}
-.hero-compact .eyebrow{margin-bottom:14px}
-.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:min(1240px,calc(100% - 40px));margin:0 auto 56px}
-.feat-card{display:flex;flex-direction:column;gap:8px;padding:22px 20px;border-radius:var(--r-md);background:var(--panel);border:1px solid rgba(255,255,255,.9);box-shadow:var(--shadow-1);min-height:168px;transition:transform .3s var(--ease),box-shadow .3s}
-.feat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-3d)}
+.hero-compact{min-height:auto;grid-template-columns:1fr;gap:14px;padding:84px 0 20px;align-items:start}
+.hero-compact h1{font-size:clamp(28px,3.8vw,42px);line-height:1.1;letter-spacing:-.03em}
+.hero-compact .eyebrow{margin-bottom:10px;padding:5px 12px 5px 6px;font-size:12.5px}
+.hero-compact .eyebrow .dot{width:18px;height:18px}
+.hero-compact .lead{margin-top:8px;max-width:540px;font-size:15px;line-height:1.5;color:var(--ink-60)}
+.hero-compact .cta{margin-top:16px;gap:12px}
+.hero-compact .cta .btn{padding:12px 24px;font-size:15px;font-weight:600}
+.hero-compact .trust{margin-top:14px;font-size:13px}
+.hero-compact .avatars span{width:28px;height:28px;font-size:11px}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:min(1240px,calc(100% - 40px));margin:8px auto 48px}
+.feat-card{display:flex;flex-direction:column;gap:8px;padding:20px 18px;border-radius:var(--r-md);background:var(--panel);border:1px solid rgba(255,255,255,.9);box-shadow:var(--shadow-1);min-height:160px;transition:transform .3s var(--ease),box-shadow .3s,border-color .3s}
+.feat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-3d);border-color:rgba(255,88,88,.4)}
 .feat-card .ico{width:36px;height:36px;border-radius:10px;background:rgba(255,88,88,.12);color:var(--coral);display:grid;place-items:center}
 .feat-card .ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.feat-card h3{font-family:var(--serif);font-size:20px;font-weight:500}
-.feat-card p{font-size:13.5px;color:var(--ink-60);line-height:1.5;flex:1}
-.feat-card .go{font-size:13px;font-weight:600;color:var(--coral)}
+.feat-card h3{font-family:var(--serif);font-size:19px;font-weight:500;color:var(--deep)}
+.feat-card p{font-size:13px;color:var(--ink-60);line-height:1.45;flex:1}
+.feat-card .go{font-size:12.5px;font-weight:600;color:var(--coral);display:inline-flex;align-items:center;gap:4px;transition:transform .2s var(--ease)}
+.feat-card:hover .go{transform:translateX(3px)}
 @media(max-width:1080px){.dash-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:640px){.dash-grid{grid-template-columns:1fr;margin-bottom:36px}.hero-compact{padding-top:96px}}
+@media(max-width:640px){.dash-grid{grid-template-columns:1fr;margin-bottom:32px}.hero-compact{padding-top:80px}}
