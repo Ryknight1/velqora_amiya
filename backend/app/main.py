@@ -77,7 +77,7 @@ def create_app(settings: Settings | None = None, container: Container | None = N
 
     app.state.container = container
     app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_credentials=False,
-                       allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"],
+                       allow_methods=["GET", "POST", "PUT", "OPTIONS"], allow_headers=["Content-Type", "Authorization"],
                        max_age=600)
 
     # ---------------------------------------------------------------- errors

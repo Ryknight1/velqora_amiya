@@ -19,6 +19,11 @@ venv/
 *.bak
 *.db.bak
 
+# Generated exports
+backend/exports/
+exports/
+*.pptx
+
 # OS / editor
 .DS_Store
 .idea/

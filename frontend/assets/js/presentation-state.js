@@ -903,6 +903,22 @@ class PresentationState {
     }
   }
 
+  loadFromDeck(data) {
+    if (!data) return false;
+    try {
+      this.deck = this._sanitizeDeck(data);
+      this.undoStack = [];
+      this.redoStack = [];
+      this.isDirty = false;
+      this._emit("change", { source: "deckLoad" });
+      this._emit("slideChange", { activeIndex: this.deck.activeSlideIndex || 0 });
+      return true;
+    } catch (err) {
+      console.warn("Could not load presentation data:", err);
+      return false;
+    }
+  }
+
   exportJSON() {
     return JSON.stringify(this.deck, null, 2);
   }

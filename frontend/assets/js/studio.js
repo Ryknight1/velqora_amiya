@@ -167,7 +167,20 @@
     presentationState = new PresentationState();
 
     // Try loading saved presentation if presId or cached draft exists
-    const hasLoaded = presId ? presentationState.loadFromStorage(`vq_pres_${presId}`) : presentationState.loadFromStorage();
+    let hasLoaded = presId ? presentationState.loadFromStorage(`vq_pres_${presId}`) : presentationState.loadFromStorage();
+
+    // If presId is provided and local draft not found, fetch from backend API
+    if (!hasLoaded && presId && typeof VQApi !== "undefined") {
+      try {
+        const presRes = await VQApi.getPresentation(presId);
+        if (presRes) {
+          presentationState.loadFromDeck(presRes);
+          hasLoaded = true;
+        }
+      } catch (err) {
+        console.warn("Could not fetch remote presentation from backend:", err);
+      }
+    }
 
     // If briefing ID is provided in context and not loaded from draft, fetch real briefing
     if (!hasLoaded && briefingId && typeof VQApi !== "undefined") {

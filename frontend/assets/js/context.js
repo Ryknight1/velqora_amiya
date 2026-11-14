@@ -2,6 +2,7 @@
 const VQContext=(()=>{
   const KEY="vq_workflow";
   const HEX=/^[a-f0-9]{32}$/;
+  const ID_PATTERN=/^(pres_)?[a-f0-9]{8,36}$/i;
   function read(){
     try{return JSON.parse(sessionStorage.getItem(KEY)||localStorage.getItem(KEY)||"null");}catch(_){return null;}
   }
@@ -16,9 +17,11 @@ const VQContext=(()=>{
   function fromLocation(){
     const q=new URLSearchParams(location.search);
     const patch={};
-    ["research_id","briefing_id","presentation_id"].forEach(k=>{
+    ["research_id","briefing_id"].forEach(k=>{
       const v=q.get(k); if(HEX.test(v||"")) patch[k]=v;
     });
+    const presVal = q.get("presentation_id");
+    if(ID_PATTERN.test(presVal||"")) patch.presentation_id = presVal;
     const entity=q.get("entity_name")||q.get("name");
     if(entity) patch.entity_name=entity.slice(0,120);
     if(Object.keys(patch).length) write(patch);
