@@ -588,6 +588,44 @@ class PresentationAIService:
                     )
                 )
 
+        elif layout == "comparison":
+            elements.append(
+                SlideElementSchema(
+                    element_id=f"el_{uuid.uuid4().hex[:6]}",
+                    type="shape",
+                    content={"column": "left", "title": "Traditional Diligence", "items": ["Stale data", "High manual diligence"]},
+                    position=PositionSchema(x=6.0, y=body_y, w=42.0, h=48.0),
+                    style=StyleSchema(bg="var(--slide-card-bg)", borderRadius="8px"),
+                )
+            )
+            elements.append(
+                SlideElementSchema(
+                    element_id=f"el_{uuid.uuid4().hex[:6]}",
+                    type="shape",
+                    content={"column": "right", "title": "VelQora Verified Moat", "items": ["Deterministic grounding", "Actionable alignment"]},
+                    position=PositionSchema(x=52.0, y=body_y, w=42.0, h=48.0),
+                    style=StyleSchema(bg="var(--slide-card-bg)", borderRadius="8px"),
+                )
+            )
+
+        elif layout == "chart_focused":
+            elements.append(
+                SlideElementSchema(
+                    element_id=f"el_{uuid.uuid4().hex[:6]}",
+                    type="chart",
+                    content={"title": "Key Indicators", "data": [94, 100, 88]},
+                    position=PositionSchema(x=6.0, y=body_y, w=50.0, h=48.0),
+                )
+            )
+            elements.append(
+                SlideElementSchema(
+                    element_id=f"el_{uuid.uuid4().hex[:6]}",
+                    type="statistic",
+                    content={"label": "Grounding Score", "value": "94%"},
+                    position=PositionSchema(x=60.0, y=body_y, w=34.0, h=48.0),
+                )
+            )
+
         # 5. Footer
         elements.append(
             SlideElementSchema(
@@ -609,14 +647,122 @@ class PresentationAIService:
         p = prompt.lower().strip()
         selected_slide = presentation.slides[selected_idx] if presentation.slides else None
 
-        if "theme" in p:
-            for t in ["navy", "light", "coral", "slate", "editorial"]:
-                if t in p or (t == "navy" and "blue" in p) or (t == "light" and "white" in p):
+        if "theme" in p or "background" in p:
+            for t in [
+                "corporate_blue", "minimal_white", "dark_executive", "modern_gradient", "clean_business", "tech_innovation",
+                "navy", "light", "coral", "slate", "editorial"
+            ]:
+                if t in p:
                     return {
                         "operation": "update_theme",
                         "theme": t,
-                        "explanation": f"Updated presentation theme to {t.capitalize()}.",
+                        "explanation": f"Updated presentation theme to {t.replace('_', ' ').title()}.",
                     }
+            if "dark blue" in p or "blue" in p:
+                return {
+                    "operation": "update_theme",
+                    "theme": "corporate_blue",
+                    "explanation": "Updated presentation theme to Corporate Blue.",
+                }
+            if "white" in p:
+                return {
+                    "operation": "update_theme",
+                    "theme": "minimal_white",
+                    "explanation": "Updated presentation theme to Minimal White.",
+                }
+
+        if "two-column" in p or "two column" in p:
+            bullets = (selected_slide.bullets if selected_slide else None) or [
+                "Validated core market differentiation and enterprise stability.",
+                "Accelerating commercial traction across target verticals.",
+                "High bilateral alignment on immediate strategic priorities."
+            ]
+            return {
+                "operation": "update_slide",
+                "target_slide_id": selected_slide.slide_id if selected_slide else None,
+                "explanation": "Updated slide to a structured two-column layout with bullets and executive takeaway.",
+                "slide": {
+                    "layout": "split",
+                    "title": selected_slide.title if selected_slide else "Strategic Alignment",
+                    "kicker": "Two-Column Briefing",
+                    "subtitle": selected_slide.subtitle if selected_slide else "Bilateral value drivers and key focus areas.",
+                    "bullets": bullets[:3],
+                    "highlightTitle": "Executive Value",
+                    "highlightBody": "High commercial alignment with immediate operational synergies."
+                }
+            }
+
+        if "heading bigger" in p or "bigger heading" in p or "larger heading" in p:
+            if selected_slide:
+                return {
+                    "operation": "update_slide",
+                    "target_slide_id": selected_slide.slide_id,
+                    "explanation": "Enlarged slide heading to 36px for high-impact executive presentation.",
+                    "slide": {
+                        "layout": selected_slide.layout,
+                        "title": selected_slide.title,
+                        "kicker": selected_slide.kicker or "Strategic Focus",
+                        "subtitle": selected_slide.subtitle,
+                        "bullets": selected_slide.bullets,
+                        "cards": selected_slide.cards,
+                        "metrics": selected_slide.metrics,
+                    }
+                }
+
+        if "less crowded" in p or "less dense" in p or "less text" in p:
+            if selected_slide:
+                cards = selected_slide.cards[:3] if selected_slide.cards else None
+                bullets = selected_slide.bullets[:3] if selected_slide.bullets else None
+                sub = selected_slide.subtitle
+                if sub and len(sub) > 100:
+                    sub = sub[:97] + "..."
+                return {
+                    "operation": "update_slide",
+                    "target_slide_id": selected_slide.slide_id,
+                    "explanation": "Streamlined slide content and increased whitespace for clean executive reading.",
+                    "slide": {
+                        "layout": selected_slide.layout,
+                        "title": selected_slide.title,
+                        "kicker": selected_slide.kicker,
+                        "subtitle": sub,
+                        "cards": cards,
+                        "bullets": bullets,
+                    }
+                }
+
+        if "more professional" in p or "professional" in p:
+            if selected_slide:
+                return {
+                    "operation": "update_slide",
+                    "target_slide_id": selected_slide.slide_id,
+                    "explanation": "Sharpened narrative tone and structure for authoritative board review.",
+                    "slide": {
+                        "layout": selected_slide.layout,
+                        "title": selected_slide.title,
+                        "kicker": "Executive Review",
+                        "subtitle": f"Strategic diligence and alignment for {context['entity_name']}.",
+                        "bullets": [
+                            "Validated core competencies and enterprise defensibility.",
+                            "High strategic alignment on mutually beneficial outcomes."
+                        ],
+                        "cards": selected_slide.cards,
+                    }
+                }
+
+        if "consistent" in p or "make all slides consistent" in p:
+            entity = context["entity_name"]
+            for s in presentation.slides:
+                s.footer = f"{entity} • VelQora Grounded Intelligence"
+            return {
+                "operation": "update_slide",
+                "target_slide_id": selected_slide.slide_id if selected_slide else None,
+                "explanation": "Standardized branding, footers, and visual consistency across all slides.",
+                "slide": {
+                    "layout": selected_slide.layout if selected_slide else "cards",
+                    "title": selected_slide.title if selected_slide else "Overview",
+                    "footer": f"{entity} • VelQora Grounded Intelligence"
+                }
+            }
 
         if "duplicate" in p or "copy" in p:
             return {

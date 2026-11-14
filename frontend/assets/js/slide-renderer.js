@@ -18,11 +18,43 @@ class SlideRenderer {
       .replace(/'/g, "&#39;");
   }
 
+  static getThemeClass(theme) {
+    let t = theme || "corporate_blue";
+    if (t === "navy") t = "corporate_blue";
+    if (t === "light") t = "minimal_white";
+    if (t === "coral") t = "dark_executive";
+    if (t === "slate") t = "tech_innovation";
+    if (t === "editorial") t = "clean_business";
+    if (t === "gradient") t = "modern_gradient";
+    return `theme-${t} theme-${theme}`;
+  }
+
+  static getStyleString(styleObj, posObj) {
+    let css = "";
+    if (posObj) {
+      if (posObj.x !== undefined) css += `left:${posObj.x}%;`;
+      if (posObj.y !== undefined) css += `top:${posObj.y}%;`;
+      if (posObj.w !== undefined) css += `width:${posObj.w}%;`;
+      if (posObj.h !== undefined) css += `height:${posObj.h}%;`;
+      css += "position:relative;";
+    }
+    if (styleObj) {
+      if (styleObj.fontSize) css += `font-size:${styleObj.fontSize};`;
+      if (styleObj.fontWeight) css += `font-weight:${styleObj.fontWeight};`;
+      if (styleObj.color) css += `color:${styleObj.color};`;
+      if (styleObj.bg) css += `background:${styleObj.bg};`;
+      if (styleObj.align) css += `text-align:${styleObj.align};`;
+      if (styleObj.borderRadius) css += `border-radius:${styleObj.borderRadius};`;
+      if (styleObj.padding) css += `padding:${styleObj.padding};`;
+    }
+    return css ? `style="${css}"` : "";
+  }
+
   /* ---------------- Main Canvas Renderer ---------------- */
-  static renderCanvas(slide, theme = "navy", selectedField = null, isInteractive = true) {
+  static renderCanvas(slide, theme = "corporate_blue", selectedField = null, isInteractive = true) {
     if (!slide) return `<div class="empty-slide-msg">No slide selected</div>`;
 
-    const themeClass = `theme-${theme || "navy"}`;
+    const themeClass = this.getThemeClass(theme);
     const layout = slide.layout || "cards";
 
     let layoutHtml = "";
@@ -31,9 +63,11 @@ class SlideRenderer {
         layoutHtml = this._renderTitleLayout(slide, selectedField, isInteractive);
         break;
       case "split":
+      case "two_column":
         layoutHtml = this._renderSplitLayout(slide, selectedField, isInteractive);
         break;
       case "metrics":
+      case "statistics_dashboard":
         layoutHtml = this._renderMetricsLayout(slide, selectedField, isInteractive);
         break;
       case "timeline":
@@ -45,10 +79,22 @@ class SlideRenderer {
       case "conclusion":
         layoutHtml = this._renderConclusionLayout(slide, selectedField, isInteractive);
         break;
+      case "comparison":
+        layoutHtml = this._renderComparisonLayout(slide, selectedField, isInteractive);
+        break;
+      case "chart_focused":
+        layoutHtml = this._renderChartFocusedLayout(slide, selectedField, isInteractive);
+        break;
       case "cards":
       default:
         layoutHtml = this._renderCardsLayout(slide, selectedField, isInteractive);
         break;
+    }
+
+    // Render custom added elements if present
+    let customElementsHtml = "";
+    if (Array.isArray(slide.customElements) && slide.customElements.length) {
+      customElementsHtml = slide.customElements.map(el => this._renderCustomElement(el, selectedField, isInteractive)).join("");
     }
 
     const footerText = slide.footer || "VelQora Intelligence • Source Grounded";
@@ -58,6 +104,7 @@ class SlideRenderer {
         <div class="slide-background-decor"></div>
         <div class="slide-inner">
           ${layoutHtml}
+          ${customElementsHtml}
         </div>
         <div class="slide-footer-bar">
           <span class="slide-footer-text ${selectedField === "footer" ? "is-selected-el" : ""}"
@@ -70,9 +117,9 @@ class SlideRenderer {
   }
 
   /* ---------------- Miniature Thumbnail Renderer ---------------- */
-  static renderThumbnail(slide, theme = "navy", index = 1, isSelected = false) {
+  static renderThumbnail(slide, theme = "corporate_blue", index = 1, isSelected = false) {
     if (!slide) return "";
-    const themeClass = `theme-${theme || "navy"}`;
+    const themeClass = this.getThemeClass(theme);
     const layout = slide.layout || "cards";
 
     // Compact miniature representation for sharp 16:9 thumbnail rendering
@@ -139,6 +186,28 @@ class SlideRenderer {
           <div class="mini-check-line"><span class="chk">✓</span><span class="bar"></span></div>
           <div class="mini-check-line"><span class="chk">✓</span><span class="bar"></span></div>
           <div class="mini-check-line"><span class="chk">✓</span><span class="bar short"></span></div>
+        </div>
+      `;
+    } else if (layout === "comparison") {
+      miniContent = `
+        <div class="mini-head">
+          <span class="mini-kicker">${this.esc(slide.kicker || "Comparison")}</span>
+          <span class="mini-title">${this.esc(slide.title || "Positioning")}</span>
+        </div>
+        <div class="mini-split-row">
+          <div class="mini-card-box" style="border-color:rgba(255,255,255,0.2);"></div>
+          <div class="mini-card-box"></div>
+        </div>
+      `;
+    } else if (layout === "chart_focused") {
+      miniContent = `
+        <div class="mini-head">
+          <span class="mini-kicker">${this.esc(slide.kicker || "Charts")}</span>
+          <span class="mini-title">${this.esc(slide.title || "Data Indicators")}</span>
+        </div>
+        <div class="mini-metrics-grid">
+          <div class="mini-metric"><b>94%</b><small>Grounding</small></div>
+          <div class="mini-metric"><b>100%</b><small>Freshness</small></div>
         </div>
       `;
     } else {
@@ -408,6 +477,112 @@ class SlideRenderer {
           <span class="takeaway-tag">Core Takeaway</span>
           <p class="takeaway-text" data-field="takeaway" ${isInteractive ? 'contenteditable="true"' : ""}>${this.esc(takeaway)}</p>
         </div>
+      </div>
+    `;
+  }
+
+  // 8. Comparison Layout
+  static _renderComparisonLayout(slide, selectedField, isInteractive) {
+    const kicker = slide.kicker || "Strategic Comparison";
+    const title = slide.title || "Competitive Landscape & Positioning";
+    const subtitle = slide.subtitle || "Side-by-side evaluation of strategic capabilities and market alternatives.";
+
+    return `
+      <div class="layout-header">
+        <span class="slide-kicker ${selectedField === "kicker" ? "is-selected-el" : ""}" data-field="kicker" ${isInteractive ? 'contenteditable="true"' : ""}>${this.esc(kicker)}</span>
+        <h2 class="slide-heading ${selectedField === "title" ? "is-selected-el" : ""}" data-field="title" ${isInteractive ? 'contenteditable="true"' : ""}>${this.esc(title)}</h2>
+        <p class="slide-subheading ${selectedField === "subtitle" ? "is-selected-el" : ""}" data-field="subtitle" ${isInteractive ? 'contenteditable="true"' : ""}>${this.esc(subtitle)}</p>
+      </div>
+      <div class="comparison-grid">
+        <div class="comparison-col standard">
+          <div class="col-badge">Traditional / Baseline</div>
+          <h4>Conventional Approaches</h4>
+          <ul class="comparison-list">
+            <li><span>✕</span> Unverified web speculation & stale metrics</li>
+            <li><span>✕</span> Slow manual diligence and disconnected sources</li>
+            <li><span>✕</span> High risk of hallucinated or outdated claims</li>
+          </ul>
+        </div>
+        <div class="comparison-col velqora">
+          <div class="col-badge active">Grounded Strategy</div>
+          <h4>VelQora Verified Moat</h4>
+          <ul class="comparison-list">
+            <li><span class="chk">✓</span> Deterministic claim-by-claim grounding matrix</li>
+            <li><span class="chk">✓</span> 30-day bounded freshness window for verified news</li>
+            <li><span class="chk">✓</span> Actionable executive presentation & alignment deck</li>
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
+  // 9. Chart & Visual Focused Layout
+  static _renderChartFocusedLayout(slide, selectedField, isInteractive) {
+    const kicker = slide.kicker || "Quantitative Intelligence";
+    const title = slide.title || "Verified Data & Market Indicators";
+    const subtitle = slide.subtitle || "Structured data visualization with verified cross-referencing.";
+
+    return `
+      <div class="layout-header">
+        <span class="slide-kicker ${selectedField === "kicker" ? "is-selected-el" : ""}" data-field="kicker" ${isInteractive ? 'contenteditable="true"' : ""}>${this.esc(kicker)}</span>
+        <h2 class="slide-heading ${selectedField === "title" ? "is-selected-el" : ""}" data-field="title" ${isInteractive ? 'contenteditable="true"' : ""}>${this.esc(title)}</h2>
+        <p class="slide-subheading ${selectedField === "subtitle" ? "is-selected-el" : ""}" data-field="subtitle" ${isInteractive ? 'contenteditable="true"' : ""}>${this.esc(subtitle)}</p>
+      </div>
+      <div class="chart-stage">
+        <div class="bar-chart-card">
+          <h4 class="chart-title">Key Performance Indicators</h4>
+          <div class="bar-chart-body">
+            <div class="bar-item">
+              <span class="bar-label">Source Grounding</span>
+              <div class="bar-track"><div class="bar-fill" style="width:94%;"></div></div>
+              <span class="bar-val">94%</span>
+            </div>
+            <div class="bar-item">
+              <span class="bar-label">Freshness Window</span>
+              <div class="bar-track"><div class="bar-fill" style="width:100%;"></div></div>
+              <span class="bar-val">100%</span>
+            </div>
+            <div class="bar-item">
+              <span class="bar-label">Fact/Analysis Separation</span>
+              <div class="bar-track"><div class="bar-fill" style="width:88%;"></div></div>
+              <span class="bar-val">88%</span>
+            </div>
+          </div>
+        </div>
+        <div class="donut-chart-card">
+          <h4 class="chart-title">Verification Grounding</h4>
+          <div class="donut-wrap">
+            <svg viewBox="0 0 36 36" class="donut-svg">
+              <path class="donut-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3.8"/>
+              <path class="donut-fill" stroke-dasharray="94, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--slide-accent)" stroke-width="3.8" stroke-linecap="round"/>
+              <text x="18" y="20.5" class="donut-text" text-anchor="middle" font-size="7" font-weight="700" fill="var(--slide-text)">94%</text>
+            </svg>
+            <p class="donut-caption">Deterministic Ground Truth</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Custom Element Renderer
+  static _renderCustomElement(el, selectedField, isInteractive) {
+    const isSelected = selectedField === el.id;
+    const styleAttr = `style="position:absolute;left:${el.x || 10}%;top:${el.y || 40}%;width:${el.w || 30}%;height:${el.h || 15}%;font-size:${el.fontSize || '14px'};font-weight:${el.fontWeight || '400'};color:${el.color || 'var(--slide-text)'};background:${el.bg || 'transparent'};"`;
+
+    if (el.type === "shape" || el.type === "divider") {
+      return `
+        <div class="custom-slide-el shape-box ${isSelected ? "is-selected-el" : ""}"
+             data-field="${el.id}" ${styleAttr} ${isInteractive ? 'title="Click to select"' : ""}>
+          ${el.type === "divider" ? '<div class="shape-divider-line"></div>' : this.esc(el.content || "")}
+        </div>
+      `;
+    }
+
+    return `
+      <div class="custom-slide-el text-box ${isSelected ? "is-selected-el" : ""}"
+           data-field="${el.id}" ${styleAttr}
+           ${isInteractive ? 'contenteditable="true" spellcheck="false"' : ""}>
+        ${this.esc(el.content || "Custom text")}
       </div>
     `;
   }

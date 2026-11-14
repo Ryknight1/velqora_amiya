@@ -183,3 +183,18 @@ class PresentationUpdateRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     presentation: PresentationSchema
+    summary: Optional[str] = None
+    save_version: bool = False
+
+
+class PresentationVersionItem(BaseModel):
+    version: int
+    timestamp: str
+    summary: str
+    slide_count: int
+    title: Optional[str] = None
+
+
+class PresentationVersionsResponse(BaseModel):
+    presentation_id: str
+    versions: List[PresentationVersionItem]

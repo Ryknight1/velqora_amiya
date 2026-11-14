@@ -53,6 +53,8 @@ const VQApi=(()=>{
     createPresentation:payload=>request("/api/presentation/create",{method:"POST",body:payload,timeout:60000}),
     presentationChat:payload=>request("/api/presentation/chat",{method:"POST",body:payload,timeout:60000}),
     getPresentation:(id,opts)=>request("/api/presentation/"+enc(id),opts),
-    updatePresentation:(id,presentation)=>request("/api/presentation/"+enc(id),{method:"PUT",body:{presentation}})
+    updatePresentation:(id,presentation,summary=null,save_version=false)=>request("/api/presentation/"+enc(id),{method:"PUT",body:{presentation,summary,save_version}}),
+    getPresentationVersions:(id,opts)=>request("/api/presentation/"+enc(id)+"/versions",opts),
+    restorePresentationVersion:(id,versionNum)=>request("/api/presentation/"+enc(id)+"/restore/"+enc(versionNum),{method:"POST"})
   };
 })();

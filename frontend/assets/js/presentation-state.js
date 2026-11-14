@@ -7,44 +7,70 @@
 class PresentationState {
   static THEMES = [
     {
-      id: "navy",
-      name: "Executive Navy",
-      description: "Midnight navy with coral accents and gold kickers. Ideal for board and executive briefings.",
-      bg: "#14213D",
+      id: "corporate_blue",
+      alias: "navy",
+      name: "Corporate Blue",
+      description: "Deep royal blue and midnight navy. High-authority boardroom aesthetic.",
+      bg: "#0B1E3F",
       accent: "#FF5858",
+      primary: "#1E40AF",
+      secondary: "#3B82F6",
       text: "#FFFFFF"
     },
     {
-      id: "light",
-      name: "Clean Minimalist",
-      description: "Crisp studio light with deep slate typography and royal blue highlights.",
+      id: "minimal_white",
+      alias: "light",
+      name: "Minimal White",
+      description: "Crisp studio white with slate typography and clean royal blue accents.",
       bg: "#FFFFFF",
       accent: "#2563EB",
+      primary: "#0F172A",
+      secondary: "#475569",
       text: "#0F172A"
     },
     {
-      id: "coral",
-      name: "VelQora Coral",
-      description: "Obsidian dark background with vivid crimson and coral gradients.",
-      bg: "#120E15",
+      id: "dark_executive",
+      alias: "coral",
+      name: "Dark Executive",
+      description: "Obsidian dark background with vivid coral accents and executive precision.",
+      bg: "#10141D",
       accent: "#FF5858",
-      text: "#FFF5F5"
+      primary: "#1E293B",
+      secondary: "#334155",
+      text: "#F8FAFC"
     },
     {
-      id: "slate",
-      name: "Cyber Slate",
-      description: "Deep technical slate with high-contrast electric cyan highlights.",
-      bg: "#0B0F19",
+      id: "modern_gradient",
+      alias: "gradient",
+      name: "Modern Gradient",
+      description: "Vibrant indigo and violet twilight gradient with high-impact magenta highlights.",
+      bg: "#1E1B4B",
+      accent: "#EC4899",
+      primary: "#6366F1",
+      secondary: "#8B5CF6",
+      text: "#FFFFFF"
+    },
+    {
+      id: "clean_business",
+      alias: "editorial",
+      name: "Clean Business",
+      description: "Sophisticated corporate slate with crisp teal and neutral gray structuring.",
+      bg: "#F1F5F9",
+      accent: "#0D9488",
+      primary: "#1E293B",
+      secondary: "#0284C7",
+      text: "#0F172A"
+    },
+    {
+      id: "tech_innovation",
+      alias: "slate",
+      name: "Technology and Innovation",
+      description: "High-contrast cyber slate with electric cyan and emerald tech highlights.",
+      bg: "#030712",
       accent: "#06B6D4",
-      text: "#F1F5F9"
-    },
-    {
-      id: "editorial",
-      name: "Warm Editorial",
-      description: "Warm parchment cream with rich ink serif typography and terracotta accents.",
-      bg: "#FAF6EF",
-      accent: "#C2410C",
-      text: "#1C1917"
+      primary: "#0B132B",
+      secondary: "#10B981",
+      text: "#F0FDFA"
     }
   ];
 
@@ -55,7 +81,9 @@ class PresentationState {
     { id: "metrics", name: "Metrics & Stats", icon: "📊", desc: "Four bold quantitative KPI blocks with contextual notes" },
     { id: "timeline", name: "Recent Developments", icon: "⏱️", desc: "Chronological milestone timeline of verified events" },
     { id: "leadership", name: "Leadership & Team", icon: "👥", desc: "Key executive profiles, decision makers, and roles" },
-    { id: "conclusion", name: "Action Plan & Next Steps", icon: "🎯", desc: "Meeting checklist, recommended strategy, and takeaway" }
+    { id: "conclusion", name: "Action Plan & Next Steps", icon: "🎯", desc: "Meeting checklist, recommended strategy, and takeaway" },
+    { id: "comparison", name: "Comparison Matrix", icon: "🆚", desc: "Side-by-side strategic comparison of capabilities and value" },
+    { id: "chart_focused", name: "Charts & Visuals", icon: "📈", desc: "Structured data visualization with bar metrics and donut grounding ring" }
   ];
 
   constructor(initialData = null) {
@@ -222,11 +250,107 @@ class PresentationState {
   }
 
   setTheme(themeId) {
-    if (!PresentationState.THEMES.some(t => t.id === themeId)) themeId = "navy";
-    if (this.deck.theme === themeId) return;
+    const found = PresentationState.THEMES.find(t => t.id === themeId || t.alias === themeId);
+    const resolvedId = found ? found.id : "corporate_blue";
+    if (this.deck.theme === resolvedId) return;
     this._pushSnapshot();
-    this.deck.theme = themeId;
-    this._emit("change", { source: "theme", theme: themeId });
+    this.deck.theme = resolvedId;
+    if (this.deck.config) this.deck.config.theme = resolvedId;
+    this._emit("change", { source: "theme", theme: resolvedId });
+  }
+
+  changeSlideTitle(index, newTitle) {
+    const idx = index >= 0 ? index : this.deck.activeSlideIndex;
+    if (idx < 0 || idx >= this.deck.slides.length || !newTitle) return;
+    this._pushSnapshot();
+    this.deck.slides[idx].title = newTitle.trim();
+    this._emit("change", { source: "changeSlideTitle", index: idx, title: newTitle });
+  }
+
+  updateElementStyle(slideIndex, elementKey, stylePatch) {
+    const idx = slideIndex >= 0 ? slideIndex : this.deck.activeSlideIndex;
+    if (idx < 0 || idx >= this.deck.slides.length || !stylePatch) return;
+    const slide = this.deck.slides[idx];
+    if (!slide.elementStyles) slide.elementStyles = {};
+    if (!slide.elementStyles[elementKey]) slide.elementStyles[elementKey] = {};
+    this._pushSnapshot();
+    Object.assign(slide.elementStyles[elementKey], stylePatch);
+    this._emit("change", { source: "updateElementStyle", slideIndex: idx, elementKey });
+  }
+
+  updateElementPosition(slideIndex, elementKey, posPatch) {
+    const idx = slideIndex >= 0 ? slideIndex : this.deck.activeSlideIndex;
+    if (idx < 0 || idx >= this.deck.slides.length || !posPatch) return;
+    const slide = this.deck.slides[idx];
+    if (!slide.elementPositions) slide.elementPositions = {};
+    if (!slide.elementPositions[elementKey]) slide.elementPositions[elementKey] = { x: 5, y: 20, w: 90, h: 20 };
+    this._pushSnapshot();
+    Object.assign(slide.elementPositions[elementKey], posPatch);
+    this._emit("change", { source: "updateElementPosition", slideIndex: idx, elementKey });
+  }
+
+  addElement(slideIndex, elementData) {
+    const idx = slideIndex >= 0 ? slideIndex : this.deck.activeSlideIndex;
+    if (idx < 0 || idx >= this.deck.slides.length || !elementData) return;
+    this._pushSnapshot();
+    const slide = this.deck.slides[idx];
+    if (!Array.isArray(slide.customElements)) slide.customElements = [];
+    const el = Object.assign({
+      id: "custom_" + Math.random().toString(36).substr(2, 7),
+      type: "text",
+      content: "New Text Block",
+      x: 10,
+      y: 40,
+      w: 40,
+      h: 20,
+      fontSize: "14px",
+      fontWeight: "400",
+      color: "var(--slide-text)",
+      bg: "transparent"
+    }, elementData);
+    slide.customElements.push(el);
+    this.deck.selectedElement = el.id;
+    this._emit("change", { source: "addElement", slideIndex: idx });
+    return el.id;
+  }
+
+  deleteElement(slideIndex, elementKey) {
+    const idx = slideIndex >= 0 ? slideIndex : this.deck.activeSlideIndex;
+    if (idx < 0 || idx >= this.deck.slides.length || !elementKey) return;
+    const slide = this.deck.slides[idx];
+    this._pushSnapshot();
+
+    if (Array.isArray(slide.customElements)) {
+      const initLen = slide.customElements.length;
+      slide.customElements = slide.customElements.filter(e => e.id !== elementKey);
+      if (slide.customElements.length !== initLen) {
+        this.deck.selectedElement = null;
+        this._emit("change", { source: "deleteElement", slideIndex: idx });
+        return true;
+      }
+    }
+
+    if (elementKey.startsWith("card_")) {
+      const cIdx = parseInt(elementKey.split("_")[1], 10);
+      if (Array.isArray(slide.cards) && slide.cards[cIdx]) {
+        slide.cards.splice(cIdx, 1);
+        this.deck.selectedElement = null;
+        this._emit("change", { source: "deleteCard", slideIndex: idx });
+        return true;
+      }
+    } else if (elementKey.startsWith("bullet_")) {
+      const bIdx = parseInt(elementKey.split("_")[1], 10);
+      if (Array.isArray(slide.bullets) && slide.bullets[bIdx] !== undefined) {
+        slide.bullets.splice(bIdx, 1);
+        this.deck.selectedElement = null;
+        this._emit("change", { source: "deleteBullet", slideIndex: idx });
+        return true;
+      }
+    }
+
+    this.deck.selectedElement = null;
+    this._emit("change", { source: "deleteElement", slideIndex: idx });
+    return true;
   }
 
   setActiveSlide(index) {

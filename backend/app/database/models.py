@@ -215,3 +215,50 @@ class PresentationRepository:
             rows = c.execute("SELECT * FROM presentations WHERE user_id = ? ORDER BY updated_at DESC", (user_id,)).fetchall()
             return [_decode(r) for r in rows if r]
 
+    def add_version(self, presentation_id: str, summary: str, presentation: dict) -> int:
+        now = utc_now_iso()
+        with self.db.connect() as c:
+            row = c.execute("SELECT history_json FROM presentations WHERE id = ?", (presentation_id,)).fetchone()
+            if not row:
+                return 0
+            history = json.loads(row[0]) if row[0] else []
+            version_num = len(history) + 1
+            history.append({
+                "version": version_num,
+                "timestamp": now,
+                "summary": summary,
+                "presentation": presentation
+            })
+            if len(history) > 30:
+                history = history[-30:]
+            c.execute("UPDATE presentations SET history_json = ?, updated_at = ? WHERE id = ?",
+                      (json.dumps(history), now, presentation_id))
+            return version_num
+
+    def get_versions(self, presentation_id: str) -> list[dict]:
+        with self.db.connect() as c:
+            row = c.execute("SELECT history_json FROM presentations WHERE id = ?", (presentation_id,)).fetchone()
+            if not row or not row[0]:
+                return []
+            return json.loads(row[0])
+
+    def restore_version(self, presentation_id: str, version_num: int) -> Optional[dict]:
+        versions = self.get_versions(presentation_id)
+        for v in versions:
+            if v.get("version") == version_num:
+                target_pres = v.get("presentation")
+                if target_pres:
+                    # Save current state before restoring so it can be recovered if needed
+                    current = self.get(presentation_id)
+                    if current and current.get("presentation"):
+                        self.add_version(presentation_id, f"Auto-save before restoring Version {version_num}", current["presentation"])
+                    self.update(
+                        presentation_id,
+                        title=target_pres.get("title", "Meeting Presentation"),
+                        theme=target_pres.get("theme", "corporate_blue"),
+                        presentation=target_pres,
+                    )
+                    return target_pres
+        return None
+
+

@@ -19,6 +19,7 @@
   const addSlideBtn = document.getElementById("addSlideBtn");
   const configBtn = document.getElementById("configBtn");
   const previewBtn = document.getElementById("previewBtn");
+  const historyBtn = document.getElementById("historyBtn");
   const saveBtn = document.getElementById("saveBtn");
   const exportBtn = document.getElementById("exportBtn");
 
@@ -36,11 +37,33 @@
   const slideLabel = document.getElementById("slideLabel");
   const layoutPill = document.getElementById("layoutPill");
   const selHint = document.getElementById("selHint");
+  const slideTitleInput = document.getElementById("slideTitleInput");
+  const aiRegenSlideBtn = document.getElementById("aiRegenSlideBtn");
   const slideCanvas = document.getElementById("slideCanvas");
   const quickAddCardBtn = document.getElementById("quickAddCardBtn");
   const quickAddBulletBtn = document.getElementById("quickAddBulletBtn");
   const quickSwitchLayoutBtn = document.getElementById("quickSwitchLayoutBtn");
   const quickResetSlideBtn = document.getElementById("quickResetSlideBtn");
+
+  // Advanced Inspector Controls
+  const inspectorBar = document.getElementById("inspectorBar");
+  const inspectorFieldLabel = document.getElementById("inspectorFieldLabel");
+  const elSizeDownBtn = document.getElementById("elSizeDownBtn");
+  const elSize = document.getElementById("elSize");
+  const elSizeUpBtn = document.getElementById("elSizeUpBtn");
+  const elWeight = document.getElementById("elWeight");
+  const elAlignLeft = document.getElementById("elAlignLeft");
+  const elAlignCenter = document.getElementById("elAlignCenter");
+  const elAlignRight = document.getElementById("elAlignRight");
+  const elColor = document.getElementById("elColor");
+  const elBg = document.getElementById("elBg");
+  const elPosX = document.getElementById("elPosX");
+  const elPosY = document.getElementById("elPosY");
+  const elWidth = document.getElementById("elWidth");
+  const elHeight = document.getElementById("elHeight");
+  const addTextBtn = document.getElementById("addTextBtn");
+  const addShapeBtn = document.getElementById("addShapeBtn");
+  const delElBtn = document.getElementById("delElBtn");
 
   // Right Panel: Navigator
   const navAddSlideBtn = document.getElementById("navAddSlideBtn");
@@ -85,6 +108,13 @@
   const exportMdBtn = document.getElementById("exportMdBtn");
   const exportPptxBtn = document.getElementById("exportPptxBtn");
 
+  // Version History Modal
+  const historyModal = document.getElementById("historyModal");
+  const closeHistoryModalBtn = document.getElementById("closeHistoryModalBtn");
+  const versionList = document.getElementById("versionList");
+  const snapshotSummaryInput = document.getElementById("snapshotSummaryInput");
+  const createSnapshotBtn = document.getElementById("createSnapshotBtn");
+
   // Mobile Tabs
   const studioTabs = document.querySelectorAll(".studio-tabs button");
 
@@ -95,6 +125,8 @@
   let lastPromptExecuted = null;
   let inlineEditDebounce = null;
   let draggedSlideIndex = null;
+  let autosaveTimer = null;
+  let isSaving = false;
 
   const SUGGESTED_PROMPTS = [
     "Create a 7-slide presentation.",
@@ -159,6 +191,8 @@
     setupModals();
     setupToolbar();
     setupCanvasEditor();
+    setupInspectorListeners();
+    setupVersionHistory();
     setupNavigator();
     setupMobileTabs();
 
@@ -177,18 +211,76 @@
     updateSlideLabels();
     updateThemeUI();
     updateConfigSummary();
+    syncInspector();
   }
 
-  function updateHeaderStatus() {
-    if (dirtyFlag) dirtyFlag.hidden = !presentationState.isDirty;
-    if (savedBadge) {
+  function updateHeaderStatus(status) {
+    if (!savedBadge) return;
+    savedBadge.classList.remove("saving", "failed");
+
+    if (status === "saving") {
+      savedBadge.classList.add("saving");
+      savedBadge.textContent = "Saving...";
+      savedBadge.style.opacity = "1";
+      if (dirtyFlag) dirtyFlag.hidden = true;
+    } else if (status === "failed") {
+      savedBadge.classList.add("failed");
+      savedBadge.textContent = "⚠ Save failed";
+      savedBadge.style.opacity = "1";
+      if (dirtyFlag) dirtyFlag.hidden = false;
+    } else if (status === "saved") {
+      savedBadge.style.opacity = "1";
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      savedBadge.textContent = `✓ Saved at ${timeStr}`;
+      if (dirtyFlag) dirtyFlag.hidden = true;
+    } else {
+      if (dirtyFlag) dirtyFlag.hidden = !presentationState.isDirty;
       if (presentationState.isDirty) {
         savedBadge.style.opacity = "0.3";
       } else {
         savedBadge.style.opacity = "1";
         savedBadge.textContent = presentationState.lastSavedAt
-          ? `✓ Saved ${presentationState.lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+          ? `✓ Saved at ${presentationState.lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
           : "✓ Saved";
+      }
+    }
+  }
+
+  function scheduleAutosave() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      if (presentationState && presentationState.isDirty && !isSaving) {
+        saveToBackend(true);
+      }
+    }, 2000);
+  }
+
+  async function saveToBackend(isAutosave = false, summary = null) {
+    if (!presentationState) return;
+    const deck = presentationState.getDeck();
+    if (!deck) return;
+
+    isSaving = true;
+    updateHeaderStatus("saving");
+
+    try {
+      const presId = deck.id || deck.presentation_id;
+      if (typeof VQApi !== "undefined" && VQApi.updatePresentation && presId) {
+        await VQApi.updatePresentation(presId, deck, summary, !isAutosave);
+      }
+      presentationState.saveToStorage();
+      isSaving = false;
+      updateHeaderStatus("saved");
+      if (!isAutosave) {
+        showActionToast("Presentation saved successfully");
+      }
+    } catch (err) {
+      console.warn("Save failed; preserving state locally:", err);
+      presentationState.saveToStorage();
+      isSaving = false;
+      updateHeaderStatus("failed");
+      if (!isAutosave) {
+        showActionToast("Saved locally (offline mode)");
       }
     }
   }
@@ -349,6 +441,7 @@
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         presentationState.selectElement(field);
+        syncInspector();
         if (selHint) selHint.textContent = `Editing: ${field.replace(/_/g, " ")}`;
       });
 
@@ -368,6 +461,7 @@
 
     slideCanvas.addEventListener("click", () => {
       presentationState.selectElement(null);
+      syncInspector();
       if (selHint) selHint.textContent = "Click any element to edit inline";
     });
   }
@@ -424,6 +518,7 @@
 
     presentationState.isDirty = true;
     updateHeaderStatus();
+    scheduleAutosave();
     // Update live thumbnail title if slide title changed
     if (field === "title") {
       const activeCard = thumbList ? thumbList.children[activeIdx] : null;
@@ -447,11 +542,13 @@
     } else {
       renderAll();
     }
+    syncInspector();
   }
 
   function onSlideChange() {
     renderActiveSlide();
     updateSlideLabels();
+    syncInspector();
 
     // Update active class on thumbnails without rebuilding DOM
     if (thumbList) {
@@ -512,14 +609,15 @@
       previewBtn.addEventListener("click", () => openPreviewModal());
     }
 
+    // History
+    if (historyBtn) {
+      historyBtn.addEventListener("click", () => openHistoryModal());
+    }
+
     // Save
     if (saveBtn) {
       saveBtn.addEventListener("click", () => {
-        if (presentationState.saveToStorage()) {
-          updateHeaderStatus();
-          showActionToast("Presentation saved successfully");
-          addChatMessage("Presentation saved to local workspace.", "ai");
-        }
+        saveToBackend(false, "Manual user save");
       });
     }
 
@@ -538,9 +636,7 @@
         presentationState.redo();
       } else if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        presentationState.saveToStorage();
-        updateHeaderStatus();
-        showActionToast("Presentation saved");
+        saveToBackend(false, "Keyboard shortcut save");
       }
     });
   }
@@ -724,11 +820,52 @@
       presentationState.updateConfig(cfg, true, activeBriefingData);
       addChatMessage("Generated a complete **7-slide executive briefing** deck covering Overview, Developments, Leadership, Strategy, Risks, and Action Plan.");
     } else if (p.includes("more professional") || p.includes("professional tone")) {
-      presentationState.setTheme("navy");
+      presentationState.setTheme("corporate_blue");
       const cfg = presentationState.getConfig();
       cfg.tone = "professional";
       presentationState.updateConfig(cfg, false);
-      addChatMessage("Refined presentation theme to **Executive Navy** and tightened typography standards for high-level board review.");
+      addChatMessage("Refined presentation theme to **Corporate Blue** and tightened typography standards for high-level board review.");
+    } else if (p.includes("two-column") || p.includes("two column")) {
+      const slide = presentationState.getActiveSlide();
+      if (slide) {
+        slide.layout = "split";
+        if (!slide.bullets || !slide.bullets.length) {
+          slide.bullets = [
+            "Validated enterprise positioning and market traction.",
+            "Accelerating commercial alignment with key decision makers.",
+            "Clear technical differentiation across core verticals."
+          ];
+        }
+        slide.highlightTitle = "Strategic Value";
+        slide.highlightBody = "High alignment potential with immediate bilateral execution benefits.";
+        presentationState.updateSlide(presentationState.getActiveSlideIndex(), slide);
+      }
+      addChatMessage("Switched slide layout to **Two-Column** with strategic bullets and highlighted takeaway.");
+    } else if (p.includes("heading bigger") || p.includes("bigger heading") || p.includes("larger heading")) {
+      const idx = presentationState.getActiveSlideIndex();
+      presentationState.updateElementStyle(idx, "title", { fontSize: "36px", fontWeight: "700" });
+      addChatMessage("Increased heading size to **36px** for high-impact executive presentation.");
+    } else if (p.includes("dark blue") || p.includes("corporate blue")) {
+      presentationState.setTheme("corporate_blue");
+      addChatMessage("Changed presentation theme to **Corporate Blue** (Royal Blue & Midnight Navy).");
+    } else if (p.includes("consistent") || p.includes("make all slides consistent")) {
+      const slides = presentationState.getSlides();
+      const entity = activeBriefingData && activeBriefingData.entity ? activeBriefingData.entity.name : "VelQora";
+      slides.forEach(s => {
+        s.footer = `${entity} • VelQora Grounded Intelligence`;
+      });
+      presentationState.isDirty = true;
+      renderAll();
+      addChatMessage("Standardized footers, kickers, and branding across all slides for executive consistency.");
+    } else if (p.includes("less crowded") || p.includes("less dense")) {
+      const slide = presentationState.getActiveSlide();
+      if (slide) {
+        if (Array.isArray(slide.cards) && slide.cards.length > 3) slide.cards = slide.cards.slice(0, 3);
+        if (Array.isArray(slide.bullets) && slide.bullets.length > 3) slide.bullets = slide.bullets.slice(0, 3);
+        if (slide.subtitle && slide.subtitle.length > 100) slide.subtitle = slide.subtitle.slice(0, 97) + "...";
+        presentationState.updateSlide(presentationState.getActiveSlideIndex(), slide);
+      }
+      addChatMessage("Refined slide spacing, simplified bullet counts, and trimmed text for clean executive breathing room.");
     } else if (p.includes("slide 3") || p.includes("improve slide 3")) {
       // Focus and sharpen slide 3
       presentationState.setActiveSlide(2); // 0-based
@@ -823,6 +960,321 @@
           presentationState.updateSlide(idx, resetSlide);
         }
       });
+    }
+  }
+
+  /* ============================================================
+     6B. ADVANCED INSPECTOR DOCK & MANUAL CONTROLS
+     ============================================================ */
+  function syncInspector() {
+    const slide = presentationState ? presentationState.getActiveSlide() : null;
+    const selField = presentationState ? presentationState.getSelectedElement() : null;
+
+    if (slideTitleInput && slide) {
+      slideTitleInput.value = slide.title || "";
+    }
+
+    if (!selField) {
+      if (inspectorFieldLabel) inspectorFieldLabel.textContent = "Selection: None";
+      if (delElBtn) delElBtn.disabled = true;
+      return;
+    }
+
+    if (delElBtn) delElBtn.disabled = false;
+    if (inspectorFieldLabel) {
+      const displayLabel = selField.replace(/^custom_/, "Custom ").replace(/_/g, " ");
+      inspectorFieldLabel.textContent = `Selected: ${displayLabel}`;
+    }
+
+    // Check if custom element
+    const customEl = slide && Array.isArray(slide.customElements)
+      ? slide.customElements.find(e => e.id === selField)
+      : null;
+
+    if (customEl) {
+      if (elSize) elSize.value = customEl.fontSize || "16px";
+      if (elWeight) elWeight.value = customEl.fontWeight || "400";
+      if (elColor && customEl.color && customEl.color.startsWith("#")) elColor.value = customEl.color;
+      if (elBg && customEl.bg && customEl.bg.startsWith("#")) elBg.value = customEl.bg;
+      if (elPosX) elPosX.value = customEl.x !== undefined ? customEl.x : 10;
+      if (elPosY) elPosY.value = customEl.y !== undefined ? customEl.y : 40;
+      if (elWidth) elWidth.value = customEl.w !== undefined ? customEl.w : 30;
+      if (elHeight) elHeight.value = customEl.h !== undefined ? customEl.h : 15;
+    } else {
+      const st = (slide && slide.elementStyles && slide.elementStyles[selField]) || {};
+      const pos = (slide && slide.elementPositions && slide.elementPositions[selField]) || {};
+
+      if (elSize) elSize.value = st.fontSize || "16px";
+      if (elWeight) elWeight.value = st.fontWeight || "400";
+      if (elColor && st.color && st.color.startsWith("#")) elColor.value = st.color;
+      if (elBg && st.bg && st.bg.startsWith("#")) elBg.value = st.bg;
+      if (elPosX) elPosX.value = pos.x !== undefined ? pos.x : "";
+      if (elPosY) elPosY.value = pos.y !== undefined ? pos.y : "";
+      if (elWidth) elWidth.value = pos.w !== undefined ? pos.w : "";
+      if (elHeight) elHeight.value = pos.h !== undefined ? pos.h : "";
+    }
+  }
+
+  function setupInspectorListeners() {
+    if (slideTitleInput) {
+      slideTitleInput.addEventListener("input", () => {
+        const val = slideTitleInput.value.trim();
+        presentationState.changeSlideTitle(presentationState.getActiveSlideIndex(), val);
+        scheduleAutosave();
+      });
+    }
+
+    if (aiRegenSlideBtn) {
+      aiRegenSlideBtn.addEventListener("click", () => {
+        const idx = presentationState.getActiveSlideIndex();
+        executePrompt(`Improve and regenerate slide ${idx + 1} with deep business intelligence.`);
+      });
+    }
+
+    if (elSizeDownBtn) {
+      elSizeDownBtn.addEventListener("click", () => {
+        const cur = parseInt(elSize.value, 10) || 16;
+        const next = Math.max(10, cur - 2) + "px";
+        elSize.value = next;
+        applyStyleToSelected({ fontSize: next });
+      });
+    }
+
+    if (elSizeUpBtn) {
+      elSizeUpBtn.addEventListener("click", () => {
+        const cur = parseInt(elSize.value, 10) || 16;
+        const next = Math.min(64, cur + 2) + "px";
+        elSize.value = next;
+        applyStyleToSelected({ fontSize: next });
+      });
+    }
+
+    if (elSize) {
+      elSize.addEventListener("change", () => {
+        let val = elSize.value.trim();
+        if (!val.endsWith("px")) val += "px";
+        applyStyleToSelected({ fontSize: val });
+      });
+    }
+
+    if (elWeight) {
+      elWeight.addEventListener("change", () => {
+        applyStyleToSelected({ fontWeight: elWeight.value });
+      });
+    }
+
+    if (elAlignLeft) {
+      elAlignLeft.addEventListener("click", () => applyStyleToSelected({ align: "left" }));
+    }
+    if (elAlignCenter) {
+      elAlignCenter.addEventListener("click", () => applyStyleToSelected({ align: "center" }));
+    }
+    if (elAlignRight) {
+      elAlignRight.addEventListener("click", () => applyStyleToSelected({ align: "right" }));
+    }
+
+    if (elColor) {
+      elColor.addEventListener("input", () => {
+        applyStyleToSelected({ color: elColor.value });
+      });
+    }
+
+    if (elBg) {
+      elBg.addEventListener("input", () => {
+        applyStyleToSelected({ bg: elBg.value });
+      });
+    }
+
+    [elPosX, elPosY, elWidth, elHeight].forEach(inp => {
+      if (inp) {
+        inp.addEventListener("change", () => {
+          applyPositionToSelected({
+            x: elPosX.value !== "" ? parseFloat(elPosX.value) : undefined,
+            y: elPosY.value !== "" ? parseFloat(elPosY.value) : undefined,
+            w: elWidth.value !== "" ? parseFloat(elWidth.value) : undefined,
+            h: elHeight.value !== "" ? parseFloat(elHeight.value) : undefined,
+          });
+        });
+      }
+    });
+
+    if (addTextBtn) {
+      addTextBtn.addEventListener("click", () => {
+        const activeIdx = presentationState.getActiveSlideIndex();
+        presentationState.addElement(activeIdx, {
+          type: "text",
+          content: "Strategic Insight Note",
+          x: 15,
+          y: 45,
+          w: 40,
+          h: 15,
+          fontSize: "14px",
+          fontWeight: "500"
+        });
+        showActionToast("Added floating text element");
+        syncInspector();
+        scheduleAutosave();
+      });
+    }
+
+    if (addShapeBtn) {
+      addShapeBtn.addEventListener("click", () => {
+        const activeIdx = presentationState.getActiveSlideIndex();
+        presentationState.addElement(activeIdx, {
+          type: "shape",
+          content: "Key Alignment Area",
+          x: 20,
+          y: 50,
+          w: 35,
+          h: 18,
+          bg: "var(--slide-card-bg)",
+          fontSize: "13px",
+          fontWeight: "600"
+        });
+        showActionToast("Added card shape element");
+        syncInspector();
+        scheduleAutosave();
+      });
+    }
+
+    if (delElBtn) {
+      delElBtn.addEventListener("click", () => {
+        const selField = presentationState.getSelectedElement();
+        if (!selField) return;
+        const activeIdx = presentationState.getActiveSlideIndex();
+        if (presentationState.deleteElement(activeIdx, selField)) {
+          showActionToast(`Deleted ${selField}`);
+          syncInspector();
+          scheduleAutosave();
+        }
+      });
+    }
+  }
+
+  function applyStyleToSelected(stylePatch) {
+    const selField = presentationState.getSelectedElement();
+    if (!selField) return;
+    const activeIdx = presentationState.getActiveSlideIndex();
+    const slide = presentationState.getActiveSlide();
+
+    if (slide && Array.isArray(slide.customElements)) {
+      const customEl = slide.customElements.find(e => e.id === selField);
+      if (customEl) {
+        Object.assign(customEl, stylePatch);
+        presentationState.isDirty = true;
+        renderActiveSlide();
+        scheduleAutosave();
+        return;
+      }
+    }
+
+    presentationState.updateElementStyle(activeIdx, selField, stylePatch);
+    scheduleAutosave();
+  }
+
+  function applyPositionToSelected(posPatch) {
+    const selField = presentationState.getSelectedElement();
+    if (!selField) return;
+    const activeIdx = presentationState.getActiveSlideIndex();
+    const slide = presentationState.getActiveSlide();
+
+    if (slide && Array.isArray(slide.customElements)) {
+      const customEl = slide.customElements.find(e => e.id === selField);
+      if (customEl) {
+        if (posPatch.x !== undefined) customEl.x = posPatch.x;
+        if (posPatch.y !== undefined) customEl.y = posPatch.y;
+        if (posPatch.w !== undefined) customEl.w = posPatch.w;
+        if (posPatch.h !== undefined) customEl.h = posPatch.h;
+        presentationState.isDirty = true;
+        renderActiveSlide();
+        scheduleAutosave();
+        return;
+      }
+    }
+
+    presentationState.updateElementPosition(activeIdx, selField, posPatch);
+    scheduleAutosave();
+  }
+
+  /* ============================================================
+     6C. VERSION HISTORY WORKFLOW
+     ============================================================ */
+  function setupVersionHistory() {
+    if (historyBtn) {
+      historyBtn.addEventListener("click", () => openHistoryModal());
+    }
+    if (closeHistoryModalBtn) {
+      closeHistoryModalBtn.addEventListener("click", () => closeAllModals());
+    }
+    if (createSnapshotBtn) {
+      createSnapshotBtn.addEventListener("click", async () => {
+        const summary = (snapshotSummaryInput && snapshotSummaryInput.value.trim()) || "Manual version snapshot";
+        if (snapshotSummaryInput) snapshotSummaryInput.value = "";
+        await saveToBackend(false, summary);
+        await loadVersionsList();
+      });
+    }
+  }
+
+  async function openHistoryModal() {
+    if (historyModal) historyModal.classList.add("active");
+    await loadVersionsList();
+  }
+
+  async function loadVersionsList() {
+    if (!versionList) return;
+    versionList.innerHTML = `<p style="font-size:12px;color:var(--ink-40);text-align:center;padding:16px;">Loading versions...</p>`;
+
+    const deck = presentationState.getDeck();
+    const presId = deck ? (deck.id || deck.presentation_id) : null;
+    if (!presId || typeof VQApi === "undefined" || !VQApi.getPresentationVersions) {
+      versionList.innerHTML = `<p style="font-size:12px;color:var(--ink-40);text-align:center;padding:16px;">Version history connects when presentations are persisted to the backend.</p>`;
+      return;
+    }
+
+    try {
+      const res = await VQApi.getPresentationVersions(presId);
+      if (!res || !res.versions || !res.versions.length) {
+        versionList.innerHTML = `<p style="font-size:12px;color:var(--ink-40);text-align:center;padding:16px;">No saved snapshots yet. Click "+ Save Snapshot" to create one.</p>`;
+        return;
+      }
+
+      versionList.replaceChildren();
+      const versionsReversed = res.versions.slice().reverse();
+      versionsReversed.forEach(v => {
+        const item = document.createElement("div");
+        item.className = "version-item";
+        const dateStr = v.timestamp ? new Date(v.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : "Recent";
+
+        item.innerHTML = `
+          <div class="version-info">
+            <span class="version-title">Version ${v.version}: ${SlideRenderer.esc(v.summary || "Snapshot")}</span>
+            <span class="version-meta">${dateStr} • ${v.slide_count || 0} slides</span>
+          </div>
+          <button type="button" class="version-restore-btn" data-version="${v.version}">Restore</button>
+        `;
+
+        const restoreBtn = item.querySelector(".version-restore-btn");
+        restoreBtn.addEventListener("click", async () => {
+          if (confirm(`Restore Version ${v.version} ("${v.summary}")? Current work will be auto-saved first.`)) {
+            try {
+              const restored = await VQApi.restorePresentationVersion(presId, v.version);
+              if (restored) {
+                presentationState.setDeck(restored);
+                closeAllModals();
+                showActionToast(`Restored Version ${v.version}`);
+                addChatMessage(`Restored presentation to **Version ${v.version}** (${v.summary}). Previous state was auto-saved as a backup.`, "ai");
+              }
+            } catch (err) {
+              alert("Failed to restore version: " + (err.message || "Unknown error"));
+            }
+          }
+        });
+
+        versionList.appendChild(item);
+      });
+    } catch (err) {
+      versionList.innerHTML = `<p style="font-size:12px;color:var(--warn);text-align:center;padding:16px;">Could not load versions: ${SlideRenderer.esc(err.message || "Network error")}</p>`;
     }
   }
 

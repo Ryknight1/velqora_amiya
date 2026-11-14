@@ -21,6 +21,7 @@ from ...schemas.presentation_schema import (
     PresentationCreateRequest,
     PresentationSchema,
     PresentationUpdateRequest,
+    PresentationVersionsResponse,
 )
 
 router = APIRouter(prefix="/presentation", tags=["presentation"])
@@ -72,7 +73,7 @@ async def update_presentation(
     user: Optional[dict] = Depends(research_user),
     c: Container = Depends(get_container),
 ) -> PresentationSchema:
-    """Directly persist updated presentation state."""
+    """Directly persist updated presentation state with autosave/version tracking."""
     row = c.presentation_repo.get(presentation_id)
     pres_data = body.presentation.model_dump()
     if row:
@@ -92,4 +93,50 @@ async def update_presentation(
             theme=body.presentation.theme,
             presentation=pres_data,
         )
+
+    if body.save_version or body.summary:
+        summary = body.summary or f"Manual update to {body.presentation.title}"
+        c.presentation_repo.add_version(presentation_id, summary, pres_data)
+
     return body.presentation
+
+
+@router.get("/{presentation_id}/versions", response_model=PresentationVersionsResponse,
+            dependencies=[Depends(rate_limit_general)])
+async def get_presentation_versions(
+    presentation_id: str = Path(...),
+    user: Optional[dict] = Depends(research_user),
+    c: Container = Depends(get_container),
+) -> PresentationVersionsResponse:
+    """Retrieve version history snapshots for a presentation."""
+    versions = c.presentation_repo.get_versions(presentation_id)
+    summaries = [
+        {
+            "version": v.get("version", idx + 1),
+            "timestamp": v.get("timestamp", ""),
+            "summary": v.get("summary", "Saved version"),
+            "slide_count": len((v.get("presentation") or {}).get("slides") or []),
+            "title": (v.get("presentation") or {}).get("title"),
+        }
+        for idx, v in enumerate(versions)
+    ]
+    return PresentationVersionsResponse(
+        presentation_id=presentation_id,
+        versions=summaries,
+    )
+
+
+@router.post("/{presentation_id}/restore/{version_num}", response_model=PresentationSchema,
+             dependencies=[Depends(rate_limit_general)])
+async def restore_presentation_version(
+    presentation_id: str = Path(...),
+    version_num: int = Path(...),
+    user: Optional[dict] = Depends(research_user),
+    c: Container = Depends(get_container),
+) -> PresentationSchema:
+    """Restore a previously saved version of a presentation."""
+    restored = c.presentation_repo.restore_version(presentation_id, version_num)
+    if not restored:
+        raise NotFoundError(f"Version {version_num} not found.")
+    return PresentationSchema.model_validate(restored)
+

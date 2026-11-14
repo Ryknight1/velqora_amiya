@@ -43,6 +43,7 @@
       <button type="button" class="btn btn-ghost" id="addSlideBtn">+ Add Slide</button>
       <button type="button" class="btn btn-ghost" id="configBtn">⚙️ Setup</button>
       <button type="button" class="btn btn-ghost" id="previewBtn">Preview</button>
+      <button type="button" class="btn btn-ghost" id="historyBtn" title="View Version History">⏱️ History</button>
       <button type="button" class="btn btn-ghost" id="saveBtn">Save</button>
       <button type="button" class="btn btn-coral" id="exportBtn">Export</button>
     </div>
@@ -110,9 +111,56 @@
         <span id="selHint" class="sel-hint">Click any element to edit inline</span>
       </div>
 
+      <div class="slide-title-bar">
+        <label for="slideTitleInput" class="sr-only">Slide Title</label>
+        <input type="text" id="slideTitleInput" placeholder="Slide Title" maxlength="120" title="Click to rename slide">
+        <button type="button" class="btn-ai-regen" id="aiRegenSlideBtn" title="Regenerate this slide with Bifrost Gemini Flash">⚡ AI Regenerate Slide</button>
+      </div>
+
       <div class="canvas-wrap">
         <div class="slide-canvas-container" id="slideCanvasContainer">
           <div class="slide-canvas" id="slideCanvas" role="region" aria-label="Selected slide canvas"></div>
+        </div>
+      </div>
+
+      <!-- Advanced Inspector Controls Dock -->
+      <div class="inspector-dock" id="inspectorBar">
+        <div class="inspector-group">
+          <span class="inspector-label" id="inspectorFieldLabel">Selection: None</span>
+        </div>
+        <div class="inspector-group">
+          <span class="inspector-label">Font:</span>
+          <button type="button" class="inspector-btn" id="elSizeDownBtn" title="Decrease font size">A-</button>
+          <input type="text" id="elSize" class="inspector-input num-sm" value="16px" title="Font size (e.g. 16px)">
+          <button type="button" class="inspector-btn" id="elSizeUpBtn" title="Increase font size">A+</button>
+          <select id="elWeight" class="inspector-input" title="Font weight">
+            <option value="400">Regular</option>
+            <option value="500">Medium</option>
+            <option value="600">Semibold</option>
+            <option value="700">Bold</option>
+          </select>
+        </div>
+        <div class="inspector-group">
+          <button type="button" class="inspector-btn" id="elAlignLeft" title="Align Left">⫷</button>
+          <button type="button" class="inspector-btn" id="elAlignCenter" title="Align Center">≡</button>
+          <button type="button" class="inspector-btn" id="elAlignRight" title="Align Right">⫸</button>
+        </div>
+        <div class="inspector-group">
+          <span class="inspector-label">Color:</span>
+          <input type="color" id="elColor" class="inspector-input color-picker" value="#ffffff" title="Text Color">
+          <input type="color" id="elBg" class="inspector-input color-picker" value="#14213d" title="Background Fill">
+        </div>
+        <div class="inspector-group">
+          <span class="inspector-label">Pos %:</span>
+          <input type="number" id="elPosX" class="inspector-input num-sm" placeholder="X" min="0" max="100" title="Left %">
+          <input type="number" id="elPosY" class="inspector-input num-sm" placeholder="Y" min="0" max="100" title="Top %">
+          <input type="number" id="elWidth" class="inspector-input num-sm" placeholder="W" min="5" max="100" title="Width %">
+          <input type="number" id="elHeight" class="inspector-input num-sm" placeholder="H" min="5" max="100" title="Height %">
+        </div>
+        <div class="inspector-group">
+          <button type="button" class="inspector-btn" id="addTextBtn" title="Add floating text box">+ Text</button>
+          <button type="button" class="inspector-btn" id="addShapeBtn" title="Add shape">+ Shape</button>
+          <button type="button" class="inspector-btn danger" id="delElBtn" title="Delete selected element">🗑 Delete</button>
         </div>
       </div>
 
@@ -204,11 +252,12 @@
       <div class="config-group">
         <label for="cfgTheme">Design Theme</label>
         <select id="cfgTheme">
-          <option value="navy" selected>Executive Navy (Midnight & Coral)</option>
-          <option value="light">Clean Minimalist (Studio White & Slate)</option>
-          <option value="coral">VelQora Coral (Obsidian & Crimson)</option>
-          <option value="slate">Cyber Slate (Dark Slate & Cyan)</option>
-          <option value="editorial">Warm Editorial (Parchment & Ink)</option>
+          <option value="corporate_blue" selected>Corporate Blue (Royal Blue & Midnight Navy)</option>
+          <option value="minimal_white">Minimal White (Crisp White & Slate)</option>
+          <option value="dark_executive">Dark Executive (Obsidian & Coral)</option>
+          <option value="modern_gradient">Modern Gradient (Twilight Violet & Magenta)</option>
+          <option value="clean_business">Clean Business (Sophisticated Slate & Teal)</option>
+          <option value="tech_innovation">Technology and Innovation (Cyber Slate & Cyan)</option>
         </select>
       </div>
       <div class="config-group">
@@ -282,6 +331,28 @@
     <span class="preview-counter" id="previewCounter">Slide 1 of 7</span>
     <button type="button" id="nextSlideBtn">Next ▶</button>
     <button type="button" id="closePreviewBtn">✕ Exit Preview</button>
+  </div>
+</div>
+
+<!-- MODAL: Version History -->
+<div class="modal-overlay" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <h2 id="historyModalTitle">Presentation Version History</h2>
+      <button type="button" class="modal-close-btn" id="closeHistoryModalBtn" aria-label="Close history modal">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--ink-60);margin-bottom:12px;">
+        Review previous snapshots or restore an earlier version. An auto-save is created before restoring so current work is never lost.
+      </p>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <input type="text" id="snapshotSummaryInput" placeholder="Version notes (e.g. Pre-board review polish)..." style="flex:1;height:32px;padding:4px 8px;font-size:12px;border:1px solid var(--ink-16);border-radius:6px;">
+        <button type="button" class="btn btn-ghost" id="createSnapshotBtn" style="height:32px;font-size:12px;">+ Save Snapshot</button>
+      </div>
+      <div class="version-list" id="versionList">
+        <p style="font-size:12px;color:var(--ink-40);text-align:center;padding:16px;">Loading versions...</p>
+      </div>
+    </div>
   </div>
 </div>
 
