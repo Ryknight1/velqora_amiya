@@ -10,11 +10,21 @@ from fastapi import Depends, Request
 
 from .config import Settings
 from .database.connection import Database
-from .database.models import SCHEMA_SQL, BriefingRepository, PresentationRepository, ResearchRepository, UserRepository
+from .database.models import (
+    SCHEMA_SQL,
+    BriefingRepository,
+    PresentationConversationRepository,
+    PresentationExportRepository,
+    PresentationRepository,
+    PresentationVersionRepository,
+    ResearchRepository,
+    UserRepository,
+)
 from .exceptions import AuthError, RateLimitedError
 from .security import decode_token
 from .services.bifrost_service import BifrostService
 from .services.briefing_service import BriefingService
+from .services.pptx_service import PowerPointService
 from .services.presentation_ai_service import PresentationAIService
 from .services.research_service import ResearchService
 from .services.tavily_service import TavilyService
@@ -54,9 +64,24 @@ class Container:
     research: ResearchService
     presentation_ai: PresentationAIService
     limiter: RateLimiter
+    pres_versions_repo: Optional[PresentationVersionRepository] = None
+    pres_conversations_repo: Optional[PresentationConversationRepository] = None
+    pres_exports_repo: Optional[PresentationExportRepository] = None
+    pptx_service: Optional[PowerPointService] = None
+
+    def __post_init__(self) -> None:
+        if self.pres_versions_repo is None and self.db is not None:
+            self.pres_versions_repo = PresentationVersionRepository(self.db)
+        if self.pres_conversations_repo is None and self.db is not None:
+            self.pres_conversations_repo = PresentationConversationRepository(self.db)
+        if self.pres_exports_repo is None and self.db is not None:
+            self.pres_exports_repo = PresentationExportRepository(self.db)
+        if self.pptx_service is None:
+            self.pptx_service = PowerPointService()
 
     def startup(self) -> None:
         self.db.init(SCHEMA_SQL)
+        self.settings.exports_dir.mkdir(parents=True, exist_ok=True)
         self.research.recover()
 
     async def shutdown(self) -> None:
@@ -69,12 +94,31 @@ def build_container(settings: Settings, tavily=None, bifrost=None) -> Container:
     db = Database(settings.database_path)
     research_repo, briefing_repo = ResearchRepository(db), BriefingRepository(db)
     presentation_repo = PresentationRepository(db)
+    pres_versions_repo = PresentationVersionRepository(db)
+    pres_conversations_repo = PresentationConversationRepository(db)
+    pres_exports_repo = PresentationExportRepository(db)
     tavily = tavily or TavilyService(settings)
     bifrost = bifrost or BifrostService(settings)
     research = ResearchService(settings, research_repo, briefing_repo, tavily, BriefingService(settings, bifrost))
     presentation_ai = PresentationAIService(settings, bifrost, presentation_repo, briefing_repo, research_repo)
-    return Container(settings, db, UserRepository(db), research_repo, briefing_repo, presentation_repo,
-                     tavily, bifrost, research, presentation_ai, RateLimiter())
+    pptx_service = PowerPointService()
+    return Container(
+        settings=settings,
+        db=db,
+        users=UserRepository(db),
+        research_repo=research_repo,
+        briefing_repo=briefing_repo,
+        presentation_repo=presentation_repo,
+        tavily=tavily,
+        bifrost=bifrost,
+        research=research,
+        presentation_ai=presentation_ai,
+        limiter=RateLimiter(),
+        pres_versions_repo=pres_versions_repo,
+        pres_conversations_repo=pres_conversations_repo,
+        pres_exports_repo=pres_exports_repo,
+        pptx_service=pptx_service,
+    )
 
 
 def get_container(request: Request) -> Container:

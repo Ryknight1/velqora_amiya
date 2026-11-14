@@ -27,6 +27,10 @@
     <div class="studio-head-left">
       <p class="page-kicker">Workflow · Step 4</p>
       <h1 class="page-title">Make Your Meeting Presentation</h1>
+      <div class="pres-title-inline-wrap">
+        <span class="pres-title-display" id="presTitleDisplay">Meeting Presentation</span>
+        <button type="button" class="btn btn-ghost" id="renamePresBtn" style="padding:2px 8px;font-size:11px;height:24px;" title="Rename Presentation">✏️ Rename</button>
+      </div>
       <p class="page-lead">Turn your research into a presentation that makes every conversation count.</p>
     </div>
     <div class="studio-actions">
@@ -42,10 +46,10 @@
       </button>
       <button type="button" class="btn btn-ghost" id="addSlideBtn">+ Add Slide</button>
       <button type="button" class="btn btn-ghost" id="configBtn">⚙️ Setup</button>
-      <button type="button" class="btn btn-ghost" id="previewBtn">Preview</button>
       <button type="button" class="btn btn-ghost" id="historyBtn" title="View Version History">⏱️ History</button>
-      <button type="button" class="btn btn-ghost" id="saveBtn">Save</button>
-      <button type="button" class="btn btn-coral" id="exportBtn">Export</button>
+      <button type="button" class="btn btn-ghost" id="previewBtn">Preview Presentation</button>
+      <button type="button" class="btn btn-ghost" id="saveBtn">Save Presentation</button>
+      <button type="button" class="btn btn-coral" id="exportBtn">Export / PowerPoint</button>
     </div>
   </div>
 
@@ -360,40 +364,79 @@
 <div class="modal-overlay" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
   <div class="modal-card">
     <div class="modal-card-header">
-      <h2 id="exportModalTitle">Export Presentation</h2>
+      <h2 id="exportModalTitle">Export & PowerPoint Generation</h2>
       <button type="button" class="modal-close-btn" id="closeExportModalBtn" aria-label="Close export modal">×</button>
     </div>
     <div class="modal-body">
+      <!-- Genuine Export Status / Progress Banner -->
+      <div class="export-status-banner" id="exportStatusBanner" style="display:none;">
+        <span class="export-spinner" id="exportSpinner"></span>
+        <span id="exportStatusText">Preparing export...</span>
+      </div>
+
       <div class="export-options-list">
+        <!-- PowerPoint Option -->
+        <div class="export-item highlighted-export">
+          <div class="export-item-info">
+            <h4 style="font-size:14px;color:var(--deep);font-weight:700;">Genuine PowerPoint (.pptx) Deck</h4>
+            <p style="margin-bottom:6px;">
+              Editable 16:9 widescreen presentation generated server-side with python-pptx. Shapes, cards, text frames, speaker notes, and column charts are 100% editable in PowerPoint, Keynote, or Google Slides.
+            </p>
+            <div id="pptxExportDetails" style="font-size:11.5px;color:var(--ink-50);display:none;"></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" class="btn btn-coral" id="genPptxBtn">Generate PowerPoint</button>
+            <button type="button" class="btn btn-ghost" id="downloadPptxBtn" style="display:none;" title="Download the generated PPTX file">⬇ Download PPTX</button>
+          </div>
+        </div>
+
+        <!-- PDF Print Option -->
         <div class="export-item">
           <div class="export-item-info">
-            <h4>Print / Save as PDF</h4>
-            <p>High-resolution 16:9 landscape presentation PDF via clean print styling.</p>
+            <h4>Export PDF (print)</h4>
+            <p>Clean high-resolution 16:9 landscape presentation PDF via browser print dialog.</p>
           </div>
           <button type="button" class="btn btn-ghost" id="exportPdfBtn">Print to PDF →</button>
         </div>
+
+        <!-- JSON Option -->
         <div class="export-item">
           <div class="export-item-info">
-            <h4>Export JSON Deck</h4>
-            <p>Download complete presentation data in portable JSON format.</p>
+            <h4>Export Presentation JSON</h4>
+            <p>Download complete presentation state for offline backup or migration.</p>
           </div>
           <button type="button" class="btn btn-ghost" id="exportJsonBtn">Download JSON →</button>
         </div>
+
+        <!-- Markdown Option -->
         <div class="export-item">
           <div class="export-item-info">
             <h4>Copy Markdown Outline</h4>
-            <p>Copy slide titles, kickers, bullets, and talking points to clipboard.</p>
+            <p>Copy slide titles, kickers, bullets, and speaker notes to clipboard.</p>
           </div>
           <button type="button" class="btn btn-ghost" id="exportMdBtn">Copy Outline →</button>
         </div>
-        <div class="export-item">
-          <div class="export-item-info">
-            <h4>PowerPoint Presentation (.pptx)</h4>
-            <p>Native PowerPoint export pipeline connects with Bifrost server in Part 5.</p>
-          </div>
-          <button type="button" class="btn btn-coral" id="exportPptxBtn">PowerPoint Export</button>
-        </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Rename Presentation -->
+<div class="modal-overlay" id="renameModal" role="dialog" aria-modal="true" aria-labelledby="renameModalTitle">
+  <div class="modal-card" style="max-width:440px;">
+    <div class="modal-card-header">
+      <h2 id="renameModalTitle">Rename Presentation</h2>
+      <button type="button" class="modal-close-btn" id="closeRenameModalBtn" aria-label="Close rename modal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="config-group">
+        <label for="renamePresInput">Presentation Title</label>
+        <input type="text" id="renamePresInput" maxlength="120" placeholder="e.g. Acme Corp — Strategic Partnership">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" id="cancelRenameBtn">Cancel</button>
+      <button type="button" class="btn btn-coral" id="applyRenameBtn">Save Title</button>
     </div>
   </div>
 </div>

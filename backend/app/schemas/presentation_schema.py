@@ -198,3 +198,26 @@ class PresentationVersionItem(BaseModel):
 class PresentationVersionsResponse(BaseModel):
     presentation_id: str
     versions: List[PresentationVersionItem]
+
+
+class PresentationHistoryResponse(BaseModel):
+    presentation_id: str
+    current_version: int = 1
+    versions: List[PresentationVersionItem] = Field(default_factory=list)
+
+
+class PresentationExportRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    format: Literal["pptx", "pdf"] = "pptx"
+    theme_override: Optional[str] = None
+
+
+class PresentationExportResponse(BaseModel):
+    export_id: str
+    presentation_id: str
+    format: str = "pptx"
+    file_name: str
+    file_size_bytes: int
+    download_url: str
+    created_at: str

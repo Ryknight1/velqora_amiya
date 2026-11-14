@@ -55,6 +55,9 @@ const VQApi=(()=>{
     getPresentation:(id,opts)=>request("/api/presentation/"+enc(id),opts),
     updatePresentation:(id,presentation,summary=null,save_version=false)=>request("/api/presentation/"+enc(id),{method:"PUT",body:{presentation,summary,save_version}}),
     getPresentationVersions:(id,opts)=>request("/api/presentation/"+enc(id)+"/versions",opts),
-    restorePresentationVersion:(id,versionNum)=>request("/api/presentation/"+enc(id)+"/restore/"+enc(versionNum),{method:"POST"})
+    getPresentationHistory:(id,opts)=>request("/api/presentation/"+enc(id)+"/history",opts),
+    restorePresentationVersion:(id,versionNum)=>request("/api/presentation/"+enc(id)+"/restore/"+enc(versionNum),{method:"POST"}),
+    exportPresentation:(id,format="pptx",theme_override=null)=>request("/api/presentation/"+enc(id)+"/export",{method:"POST",body:{format,theme_override},timeout:60000}),
+    getPresentationDownloadUrl:(id,exportId=null)=>base+"/api/presentation/"+enc(id)+"/download"+(exportId?"?export_id="+enc(exportId):"")
   };
 })();

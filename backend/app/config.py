@@ -69,6 +69,7 @@ class Settings:
         ]
     )
     frontend_dir: Path = PROJECT_DIR / "frontend"
+    exports_dir: Path = BACKEND_DIR / "exports"
     trust_proxy: bool = False
 
     # --- database (SQLite by default; replaceable layer) ---
@@ -141,6 +142,7 @@ class Settings:
         if auth_mode not in {"bearer", "virtual_key"}:
             auth_mode = "bearer"
         frontend = _env("FRONTEND_DIR")
+        exports_path = _env("EXPORTS_DIR")
         return cls(
             app_env=_env("APP_ENV", "development"),
             log_level=_env("LOG_LEVEL", "INFO").upper(),
@@ -150,6 +152,7 @@ class Settings:
                 "http://localhost:3000,http://127.0.0.1:3000",
             ),
             frontend_dir=Path(frontend) if frontend else PROJECT_DIR / "frontend",
+            exports_dir=Path(exports_path) if exports_path else BACKEND_DIR / "exports",
             trust_proxy=_bool("TRUST_PROXY", False),
             database_path=_env("DATABASE_PATH", str(BACKEND_DIR / "velqora.db")),
             jwt_secret=jwt_secret,

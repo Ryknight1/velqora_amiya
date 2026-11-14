@@ -107,6 +107,21 @@
   const exportJsonBtn = document.getElementById("exportJsonBtn");
   const exportMdBtn = document.getElementById("exportMdBtn");
   const exportPptxBtn = document.getElementById("exportPptxBtn");
+  const genPptxBtn = document.getElementById("genPptxBtn");
+  const downloadPptxBtn = document.getElementById("downloadPptxBtn");
+  const exportStatusBanner = document.getElementById("exportStatusBanner");
+  const exportSpinner = document.getElementById("exportSpinner");
+  const exportStatusText = document.getElementById("exportStatusText");
+  const pptxExportDetails = document.getElementById("pptxExportDetails");
+
+  // Rename Modal & Header Display
+  const presTitleDisplay = document.getElementById("presTitleDisplay");
+  const renamePresBtn = document.getElementById("renamePresBtn");
+  const renameModal = document.getElementById("renameModal");
+  const closeRenameModalBtn = document.getElementById("closeRenameModalBtn");
+  const cancelRenameBtn = document.getElementById("cancelRenameBtn");
+  const applyRenameBtn = document.getElementById("applyRenameBtn");
+  const renamePresInput = document.getElementById("renamePresInput");
 
   // Version History Modal
   const historyModal = document.getElementById("historyModal");
@@ -123,6 +138,7 @@
   let activeBriefingData = null;
   let previewIndex = 0;
   let lastPromptExecuted = null;
+  let lastExportDownloadUrl = null;
   let inlineEditDebounce = null;
   let draggedSlideIndex = null;
   let autosaveTimer = null;
@@ -311,6 +327,9 @@
     const themeObj = PresentationState.THEMES.find(t => t.id === presentationState.getTheme()) || PresentationState.THEMES[0];
     if (deckSummaryChip) {
       deckSummaryChip.textContent = `${total} Slides · ${themeObj.name} · ${cfg.tone || "Professional"}`;
+    }
+    if (presTitleDisplay) {
+      presTitleDisplay.textContent = presentationState.getTitle() || "Meeting Presentation";
     }
   }
 
@@ -1340,6 +1359,22 @@
     if (exportJsonBtn) exportJsonBtn.addEventListener("click", () => handleJsonExport());
     if (exportMdBtn) exportMdBtn.addEventListener("click", () => handleMarkdownExport());
     if (exportPptxBtn) exportPptxBtn.addEventListener("click", () => handlePptxExport());
+    if (genPptxBtn) genPptxBtn.addEventListener("click", () => handlePptxExport());
+    if (downloadPptxBtn) downloadPptxBtn.addEventListener("click", () => handleDownloadPptx());
+
+    // Rename Modal
+    if (renamePresBtn) renamePresBtn.addEventListener("click", () => openRenameModal());
+    if (closeRenameModalBtn) closeRenameModalBtn.addEventListener("click", () => closeAllModals());
+    if (cancelRenameBtn) cancelRenameBtn.addEventListener("click", () => closeAllModals());
+    if (applyRenameBtn) applyRenameBtn.addEventListener("click", () => handleApplyRename());
+    if (renamePresInput) {
+      renamePresInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleApplyRename();
+        }
+      });
+    }
 
     // Close on overlay click
     document.querySelectorAll(".modal-overlay").forEach(overlay => {
@@ -1578,10 +1613,147 @@
     }
   }
 
-  function handlePptxExport() {
+  async function handlePptxExport() {
+    if (!presentationState) return;
+    const presId = presentationState.getId();
+    if (!presId) {
+      showActionToast("Please save the presentation before exporting.");
+      return;
+    }
+
+    if (exportStatusBanner) {
+      exportStatusBanner.style.display = "flex";
+      exportStatusBanner.className = "export-status-banner loading";
+    }
+    if (exportSpinner) {
+      exportSpinner.style.display = "inline-block";
+    }
+    if (exportStatusText) {
+      exportStatusText.textContent = "Generating editable 16:9 widescreen PowerPoint deck on server...";
+    }
+    if (genPptxBtn) {
+      genPptxBtn.disabled = true;
+      genPptxBtn.textContent = "Generating...";
+    }
+    if (exportPptxBtn) {
+      exportPptxBtn.disabled = true;
+      exportPptxBtn.textContent = "Generating...";
+    }
+    if (downloadPptxBtn) {
+      downloadPptxBtn.style.display = "none";
+    }
+
+    try {
+      // 1. Ensure any pending edits are saved to the backend
+      await saveToBackend(false, "Pre-export auto-save");
+
+      // 2. Call backend export endpoint
+      const res = await VQApi.exportPresentation(presId, "pptx");
+      lastExportDownloadUrl = res.download_url;
+
+      if (exportStatusBanner) {
+        exportStatusBanner.className = "export-status-banner success";
+      }
+      if (exportSpinner) {
+        exportSpinner.style.display = "none";
+      }
+      const sizeKb = Math.round((res.file_size_bytes || 0) / 1024);
+      if (exportStatusText) {
+        exportStatusText.textContent = `✓ PowerPoint deck ready! (${res.file_name} • ${sizeKb} KB)`;
+      }
+      if (pptxExportDetails) {
+        pptxExportDetails.style.display = "block";
+        pptxExportDetails.textContent = `Generated: ${new Date(res.created_at || Date.now()).toLocaleTimeString()} • 16:9 Widescreen • Editable Shapes & Text`;
+      }
+
+      if (downloadPptxBtn) {
+        downloadPptxBtn.style.display = "inline-flex";
+        downloadPptxBtn.textContent = `⬇ Download ${res.file_name}`;
+      }
+
+      showActionToast("PowerPoint deck generated successfully!");
+      addChatMessage(`🎉 Your PowerPoint deck **${res.file_name}** has been generated! You can download it directly below or from the Export menu.`, "ai");
+
+      // Automatically trigger file download for convenience
+      const a = document.createElement("a");
+      a.href = res.download_url;
+      a.download = res.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+    } catch (err) {
+      console.error("PowerPoint export failed:", err);
+      if (exportStatusBanner) {
+        exportStatusBanner.className = "export-status-banner error";
+      }
+      if (exportSpinner) {
+        exportSpinner.style.display = "none";
+      }
+      if (exportStatusText) {
+        exportStatusText.textContent = `Export failed: ${err.message || "Could not generate PPTX."}`;
+      }
+      showActionToast(`Export error: ${err.message || "Failed"}`);
+    } finally {
+      if (genPptxBtn) {
+        genPptxBtn.disabled = false;
+        genPptxBtn.textContent = "Generate PowerPoint";
+      }
+      if (exportPptxBtn) {
+        exportPptxBtn.disabled = false;
+        exportPptxBtn.textContent = "Generate PowerPoint";
+      }
+    }
+  }
+
+  function handleDownloadPptx() {
+    if (!lastExportDownloadUrl && presentationState) {
+      lastExportDownloadUrl = VQApi.getPresentationDownloadUrl(presentationState.getId());
+    }
+    if (lastExportDownloadUrl) {
+      const a = document.createElement("a");
+      a.href = lastExportDownloadUrl;
+      const cleanTitle = (presentationState.getTitle() || "Presentation").replace(/[^a-zA-Z0-9_\- ]/g, "").trim().replace(/\s+/g, "_");
+      a.download = `${cleanTitle || "VelQora_Presentation"}.pptx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showActionToast("Downloading PowerPoint deck...");
+    } else {
+      handlePptxExport();
+    }
+  }
+
+  function openRenameModal() {
+    if (!presentationState) return;
+    if (renamePresInput) {
+      renamePresInput.value = presentationState.getTitle() || "";
+    }
+    if (renameModal) {
+      renameModal.classList.add("active");
+      setTimeout(() => {
+        if (renamePresInput) {
+          renamePresInput.focus();
+          renamePresInput.select();
+        }
+      }, 50);
+    }
+  }
+
+  function handleApplyRename() {
+    if (!presentationState) return;
+    const newTitle = (renamePresInput ? renamePresInput.value : "").trim();
+    if (!newTitle) {
+      showActionToast("Please enter a presentation title.");
+      return;
+    }
+    presentationState.setTitle(newTitle);
+    if (presTitleDisplay) {
+      presTitleDisplay.textContent = newTitle;
+    }
     closeAllModals();
-    addChatMessage("Direct PowerPoint (.pptx) server export connects to the Bifrost backend service in **Part 5**.", "ai");
-    alert("PowerPoint export pipeline connects with Bifrost server in Part 5. You can currently Print to PDF or download the structured JSON deck.");
+    saveToBackend(false, `Renamed presentation to ${newTitle}`);
+    showActionToast("Presentation renamed");
   }
 
   /* ============================================================

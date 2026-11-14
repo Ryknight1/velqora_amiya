@@ -52,13 +52,52 @@ CREATE TABLE IF NOT EXISTS presentations (
     research_id TEXT,
     briefing_id TEXT,
     title TEXT NOT NULL,
-    theme TEXT NOT NULL DEFAULT 'navy',
+    theme TEXT NOT NULL DEFAULT 'corporate_blue',
     presentation_json TEXT NOT NULL,
+    current_version INTEGER NOT NULL DEFAULT 1,
     history_json TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_presentations_research ON presentations(research_id);
+
+CREATE TABLE IF NOT EXISTS presentation_versions (
+    id TEXT PRIMARY KEY,
+    presentation_id TEXT NOT NULL,
+    version_num INTEGER NOT NULL,
+    summary TEXT NOT NULL DEFAULT '',
+    presentation_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (presentation_id) REFERENCES presentations(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_pres_versions_pres_id ON presentation_versions(presentation_id);
+
+CREATE TABLE IF NOT EXISTS presentation_conversations (
+    id TEXT PRIMARY KEY,
+    presentation_id TEXT NOT NULL,
+    user_id TEXT,
+    role TEXT NOT NULL,
+    message TEXT NOT NULL,
+    operation TEXT,
+    slide_id TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (presentation_id) REFERENCES presentations(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_pres_conversations_pres_id ON presentation_conversations(presentation_id);
+
+CREATE TABLE IF NOT EXISTS presentation_exports (
+    id TEXT PRIMARY KEY,
+    presentation_id TEXT NOT NULL,
+    user_id TEXT,
+    format TEXT NOT NULL DEFAULT 'pptx',
+    file_path TEXT NOT NULL,
+    file_name TEXT NOT NULL,
+    file_size INTEGER NOT NULL DEFAULT 0,
+    version_num INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (presentation_id) REFERENCES presentations(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_pres_exports_pres_id ON presentation_exports(presentation_id);
 """
 
 _JSON_FIELDS = {"request_json", "entity_json", "window_json", "sources_json", "warnings_json", "error_json",
@@ -66,7 +105,7 @@ _JSON_FIELDS = {"request_json", "entity_json", "window_json", "sources_json", "w
 _RESEARCH_COLS = {"status", "stage", "progress", "message", "window_json", "sources_json", "warnings_json",
                   "error_json", "briefing_id"}
 _BRIEFING_COLS = {"status", "stage", "progress", "message", "briefing_json", "error_json"}
-_PRESENTATION_COLS = {"title", "theme", "presentation_json", "history_json", "research_id", "briefing_id", "user_id"}
+_PRESENTATION_COLS = {"title", "theme", "presentation_json", "history_json", "research_id", "briefing_id", "user_id", "current_version"}
 
 
 def _decode(row) -> Optional[Dict[str, Any]]:
@@ -181,17 +220,25 @@ class BriefingRepository:
 class PresentationRepository:
     def __init__(self, db: Database):
         self.db = db
+        # Safe migration: ensure current_version column exists on presentations
+        try:
+            with self.db.connect() as c:
+                cols = [col[1] for col in c.execute("PRAGMA table_info(presentations)").fetchall()]
+                if cols and "current_version" not in cols:
+                    c.execute("ALTER TABLE presentations ADD COLUMN current_version INTEGER NOT NULL DEFAULT 1")
+        except Exception:
+            pass
 
     def create(self, presentation_id: str, user_id: Optional[str], research_id: Optional[str],
                briefing_id: Optional[str], title: str, theme: str, presentation: dict,
-               history: Optional[list] = None) -> None:
+               history: Optional[list] = None, current_version: int = 1) -> None:
         now = utc_now_iso()
         with self.db.connect() as c:
             c.execute(
                 "INSERT INTO presentations (id, user_id, research_id, briefing_id, title, theme, "
-                "presentation_json, history_json, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "presentation_json, current_version, history_json, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (presentation_id, user_id, research_id, briefing_id, title, theme,
-                 json.dumps(presentation), json.dumps(history or []), now, now)
+                 json.dumps(presentation), current_version, json.dumps(history or []), now, now)
             )
 
     def update(self, presentation_id: str, **fields: Any) -> None:
@@ -231,16 +278,42 @@ class PresentationRepository:
             })
             if len(history) > 30:
                 history = history[-30:]
-            c.execute("UPDATE presentations SET history_json = ?, updated_at = ? WHERE id = ?",
-                      (json.dumps(history), now, presentation_id))
+            c.execute(
+                "UPDATE presentations SET current_version = ?, history_json = ?, updated_at = ? WHERE id = ?",
+                (version_num, json.dumps(history), now, presentation_id)
+            )
+            # Also persist in presentation_versions
+            c.execute(
+                "INSERT INTO presentation_versions (id, presentation_id, version_num, summary, presentation_json, created_at) "
+                "VALUES (?,?,?,?,?,?)",
+                (f"ver_{presentation_id}_{version_num}", presentation_id, version_num, summary, json.dumps(presentation), now)
+            )
             return version_num
 
     def get_versions(self, presentation_id: str) -> list[dict]:
         with self.db.connect() as c:
             row = c.execute("SELECT history_json FROM presentations WHERE id = ?", (presentation_id,)).fetchone()
-            if not row or not row[0]:
-                return []
-            return json.loads(row[0])
+            if row and row[0]:
+                history = json.loads(row[0])
+                if history:
+                    return history
+
+            rows = c.execute(
+                "SELECT version_num as version, created_at as timestamp, summary, presentation_json "
+                "FROM presentation_versions WHERE presentation_id = ? ORDER BY version_num ASC",
+                (presentation_id,)
+            ).fetchall()
+            if rows:
+                result = []
+                for r in rows:
+                    item = dict(r)
+                    if item.get("presentation_json"):
+                        item["presentation"] = json.loads(item["presentation_json"])
+                        del item["presentation_json"]
+                    result.append(item)
+                return result
+
+            return []
 
     def restore_version(self, presentation_id: str, version_num: int) -> Optional[dict]:
         versions = self.get_versions(presentation_id)
@@ -257,8 +330,109 @@ class PresentationRepository:
                         title=target_pres.get("title", "Meeting Presentation"),
                         theme=target_pres.get("theme", "corporate_blue"),
                         presentation=target_pres,
+                        current_version=version_num,
                     )
                     return target_pres
         return None
+
+
+class PresentationVersionRepository:
+    def __init__(self, db: Database):
+        self.db = db
+
+    def create(self, presentation_id: str, version_num: int, summary: str, presentation: dict) -> str:
+        ver_id = f"ver_{presentation_id}_{version_num}"
+        now = utc_now_iso()
+        with self.db.connect() as c:
+            c.execute(
+                "INSERT INTO presentation_versions (id, presentation_id, version_num, summary, presentation_json, created_at) "
+                "VALUES (?,?,?,?,?,?)",
+                (ver_id, presentation_id, version_num, summary, json.dumps(presentation), now)
+            )
+            return ver_id
+
+    def list_for_presentation(self, presentation_id: str) -> list[dict]:
+        with self.db.connect() as c:
+            rows = c.execute(
+                "SELECT * FROM presentation_versions WHERE presentation_id = ? ORDER BY version_num ASC",
+                (presentation_id,)
+            ).fetchall()
+            return [_decode(r) for r in rows if r]
+
+    def get_by_num(self, presentation_id: str, version_num: int) -> Optional[dict]:
+        with self.db.connect() as c:
+            row = c.execute(
+                "SELECT * FROM presentation_versions WHERE presentation_id = ? AND version_num = ?",
+                (presentation_id, version_num)
+            ).fetchone()
+            return _decode(row)
+
+
+class PresentationConversationRepository:
+    def __init__(self, db: Database):
+        self.db = db
+
+    def add(self, presentation_id: str, role: str, message: str, user_id: Optional[str] = None,
+            operation: Optional[str] = None, slide_id: Optional[str] = None) -> str:
+        import uuid
+        msg_id = f"conv_{uuid.uuid4().hex[:10]}"
+        now = utc_now_iso()
+        with self.db.connect() as c:
+            c.execute(
+                "INSERT INTO presentation_conversations (id, presentation_id, user_id, role, message, operation, slide_id, created_at) "
+                "VALUES (?,?,?,?,?,?,?,?)",
+                (msg_id, presentation_id, user_id, role, message, operation, slide_id, now)
+            )
+            return msg_id
+
+    def list_for_presentation(self, presentation_id: str, limit: int = 50) -> list[dict]:
+        with self.db.connect() as c:
+            rows = c.execute(
+                "SELECT * FROM presentation_conversations WHERE presentation_id = ? ORDER BY created_at ASC LIMIT ?",
+                (presentation_id, limit)
+            ).fetchall()
+            return [dict(r) for r in rows if r]
+
+
+class PresentationExportRepository:
+    def __init__(self, db: Database):
+        self.db = db
+
+    def create(self, presentation_id: str, format: str, file_path: str, file_name: str,
+               file_size: int = 0, user_id: Optional[str] = None, version_num: int = 1,
+               export_id: Optional[str] = None) -> str:
+        if not export_id:
+            import uuid
+            export_id = f"exp_{uuid.uuid4().hex[:10]}"
+        now = utc_now_iso()
+        with self.db.connect() as c:
+            c.execute(
+                "INSERT INTO presentation_exports (id, presentation_id, user_id, format, file_path, file_name, file_size, version_num, created_at) "
+                "VALUES (?,?,?,?,?,?,?,?,?)",
+                (export_id, presentation_id, user_id, format, file_path, file_name, file_size, version_num, now)
+            )
+            return export_id
+
+    def get(self, export_id: str) -> Optional[dict]:
+        with self.db.connect() as c:
+            row = c.execute("SELECT * FROM presentation_exports WHERE id = ?", (export_id,)).fetchone()
+            return dict(row) if row else None
+
+    def latest_for_presentation(self, presentation_id: str, format: str = "pptx") -> Optional[dict]:
+        with self.db.connect() as c:
+            row = c.execute(
+                "SELECT * FROM presentation_exports WHERE presentation_id = ? AND format = ? ORDER BY created_at DESC LIMIT 1",
+                (presentation_id, format)
+            ).fetchone()
+            return dict(row) if row else None
+
+    def list_for_presentation(self, presentation_id: str) -> list[dict]:
+        with self.db.connect() as c:
+            rows = c.execute(
+                "SELECT * FROM presentation_exports WHERE presentation_id = ? ORDER BY created_at DESC",
+                (presentation_id,)
+            ).fetchall()
+            return [dict(r) for r in rows if r]
+
 
 
