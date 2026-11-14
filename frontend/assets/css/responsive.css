@@ -26,6 +26,11 @@
   .how .lbl{width:100%}
   .step+.step::before{display:none}
 }
+@media(max-width:480px){
+  .nav .btn-coral{padding:8px 12px;font-size:12px;white-space:nowrap}
+  .nav .brand{font-size:16px;gap:8px}
+  .nav .brand .logo{width:32px;height:32px}
+}
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
   h1 .w,.rise,.slot,.logo .st,.logo .pop,.logo .halo2{opacity:1!important;transform:none!important;filter:none!important;stroke-dashoffset:0!important}

@@ -178,7 +178,8 @@
     const ctx = VQContext.fromLocation() || VQContext.read() || {};
 
     const showEmpty = (msg) => {
-      meetRoot.innerHTML = `<div class="empty-state">${esc(msg)} <a href="research.html">Start a new research</a>.</div>`;
+      const researchUrl = typeof VQContext !== "undefined" ? VQContext.href("research.html") : "research.html";
+      meetRoot.innerHTML = `<div class="empty-state">${esc(msg)} <a href="${researchUrl}">Start a new research</a>.</div>`;
     };
 
     if (!ctx.briefing_id && !ctx.research_id) {
@@ -208,7 +209,7 @@
         for (let i = 0; i < 45; i++) {
           await sleep(1500);
           b = await VQApi.getBriefing(briefingId);
-          if (b.status === "completed") break;
+          if (b.status === "completed" || b.status === "failed") break;
         }
       }
 

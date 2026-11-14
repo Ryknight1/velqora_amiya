@@ -222,7 +222,7 @@
       } else if (err.code === "bifrost_not_configured") {
         errorText = "The AI gateway is not configured. Set BIFROST_BASE_URL and BIFROST_MODEL in backend/.env.";
       } else if (err.code === "network") {
-        errorText = "Cannot reach the VelQora backend. Make sure the server is running on http://localhost:8000.";
+        errorText = "Cannot reach the VelQora backend server. Please verify your connection or ensure the service is running.";
       }
       showMsg(errorText, "error");
       setBusy(false, 'Retry Research <span class="arr">→</span>');

@@ -17,9 +17,11 @@ class Database:
 
     @contextmanager
     def connect(self) -> Iterator[sqlite3.Connection]:
-        conn = self._memory_conn or sqlite3.connect(self.path, timeout=10, check_same_thread=False)
+        conn = self._memory_conn or sqlite3.connect(self.path, timeout=15, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         try:
+            conn.execute("PRAGMA busy_timeout = 15000")
+            conn.execute("PRAGMA foreign_keys = ON")
             yield conn
             conn.commit()
         except Exception:

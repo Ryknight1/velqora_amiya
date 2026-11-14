@@ -285,12 +285,13 @@
   }
 
   async function saveToBackend(isAutosave = false, summary = null) {
-    if (!presentationState) return;
+    if (!presentationState || isSaving) return;
     const deck = presentationState.getDeck();
     if (!deck) return;
 
     isSaving = true;
     updateHeaderStatus("saving");
+    if (saveBtn) saveBtn.disabled = true;
 
     try {
       const presId = deck.id || deck.presentation_id;
@@ -298,7 +299,6 @@
         await VQApi.updatePresentation(presId, deck, summary, !isAutosave);
       }
       presentationState.saveToStorage();
-      isSaving = false;
       updateHeaderStatus("saved");
       if (!isAutosave) {
         showActionToast("Presentation saved successfully");
@@ -306,11 +306,13 @@
     } catch (err) {
       console.warn("Save failed; preserving state locally:", err);
       presentationState.saveToStorage();
-      isSaving = false;
       updateHeaderStatus("failed");
       if (!isAutosave) {
         showActionToast("Saved locally (offline mode)");
       }
+    } finally {
+      isSaving = false;
+      if (saveBtn) saveBtn.disabled = false;
     }
   }
 
@@ -714,10 +716,17 @@
     }
   }
 
+  let isPromptRunning = false;
+
   async function executePrompt(promptText) {
+    if (isPromptRunning) return;
+    isPromptRunning = true;
     lastPromptExecuted = promptText;
     addChatMessage(promptText, "user");
     setTypingState(true);
+    const sendBtn = document.getElementById("sendBtn");
+    if (sendBtn) sendBtn.disabled = true;
+    if (chatInput) chatInput.disabled = true;
 
     const activeIdx = presentationState.getActiveSlideIndex();
     const activeSlide = presentationState.getActiveSlide();
@@ -746,7 +755,6 @@
         if (res && res.slides) {
           presentationState.setDeck(res);
           addChatMessage(`Generated a complete **${res.slides.length}-slide executive presentation** using verified research intelligence and Gemini Flash.`, "ai");
-          setTypingState(false);
           return;
         }
       }
@@ -776,7 +784,6 @@
             presentationState.setActiveSlide(res.affected_slide_index);
           }
           addChatMessage(res.explanation || "Updated presentation successfully.", "ai");
-          setTypingState(false);
           return;
         }
       }
@@ -785,13 +792,19 @@
       // Graceful local handling to prevent UI disruption if Bifrost gateway is unreachable
       processAgentAction(promptText);
       addChatMessage("*(Gemini Flash via Bifrost gateway was temporarily unreachable; applied structured local transformation)*", "ai");
-      setTypingState(false);
       return;
+    } finally {
+      isPromptRunning = false;
+      setTypingState(false);
+      if (sendBtn) sendBtn.disabled = false;
+      if (chatInput) {
+        chatInput.disabled = false;
+        chatInput.focus();
+      }
     }
 
     // Default local fallback if no VQApi
     processAgentAction(promptText);
-    setTypingState(false);
   }
 
   function setTypingState(isTyping) {
@@ -1394,6 +1407,13 @@
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) closeAllModals();
       });
+    });
+
+    // Close on Escape key press
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeAllModals();
+      }
     });
   }
 

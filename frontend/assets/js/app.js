@@ -50,29 +50,41 @@ if(fine){
 
   /* cursor spotlight */
   const spot=$("#spot");
-  if(spot) addEventListener("pointermove",e=>{spot.style.setProperty("--sx",e.clientX+"px");spot.style.setProperty("--sy",e.clientY+"px");},{passive:true});
+  let spotTicking = false;
+  let lastX = 0, lastY = 0;
+  if(spot){
+    addEventListener("pointermove",e=>{
+      lastX = e.clientX; lastY = e.clientY;
+      if(!spotTicking){
+        requestAnimationFrame(()=>{
+          spot.style.setProperty("--sx",lastX+"px");
+          spot.style.setProperty("--sy",lastY+"px");
+          spotTicking = false;
+        });
+        spotTicking = true;
+      }
+    },{passive:true});
+  }
 }
 
-/* ---- Scroll: progress bar, nav state, depth parallax ---- */
+/* ---- Scroll: progress bar, nav state, depth parallax (rAF throttled) ---- */
 const nav=$("#nav"),sbar=$("#sbar");
-function onScroll(){
+let scrollTicking = false;
+function updateScroll(){
   if(nav) nav.classList.toggle("scrolled",scrollY>20);
   const max=document.documentElement.scrollHeight-innerHeight;
   if(sbar) sbar.style.setProperty("--p",max>0?(scrollY/max).toFixed(4):0);
   if(!reduce && scene) scene.style.setProperty("--scroll",scrollY);
+  scrollTicking = false;
 }
-addEventListener("scroll",onScroll,{passive:true}); onScroll();
+function onScroll(){
+  if(!scrollTicking){
+    requestAnimationFrame(updateScroll);
+    scrollTicking = true;
+  }
+}
+addEventListener("scroll",onScroll,{passive:true}); updateScroll();
 
 /* ---- Reveal on scroll ---- */
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.15});
 $$(".io").forEach(el=>io.observe(el));
-
-/* ---- Mobile nav + active link ---- */
-const burger=$("#burger"),links=$("#links");
-if(burger && links){
-  burger.addEventListener("click",()=>{burger.classList.toggle("open");links.classList.toggle("open");});
-  links.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>{
-    links.querySelectorAll("a").forEach(x=>x.classList.remove("active")); a.classList.add("active");
-    burger.classList.remove("open"); links.classList.remove("open");
-  }));
-}

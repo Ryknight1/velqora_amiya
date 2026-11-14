@@ -18,6 +18,8 @@ venv/
 *.sqlite3
 *.bak
 *.db.bak
+*.db.backup*
+*.backup*
 
 # Generated exports
 backend/exports/

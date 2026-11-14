@@ -5,9 +5,10 @@
    ============================================================ */
 const VQApi=(()=>{
   const cfg=window.VELQORA_API_BASE;
-  const local=location.hostname==="localhost"||location.hostname==="127.0.0.1";
+  const isFile=typeof location!=="undefined"&&location.protocol==="file:";
+  const local=typeof location!=="undefined"&&(location.hostname==="localhost"||location.hostname==="127.0.0.1");
   /* same-origin when FastAPI serves the pages (port 8000 / production); otherwise the local dev backend */
-  const base=(typeof cfg==="string"?cfg:(local&&location.port!=="8000"?"http://localhost:8000":"")).replace(/\/$/,"");
+  const base=(typeof cfg==="string"?cfg:(isFile||(local&&location.port!=="8000")?"http://localhost:8000":"")).replace(/\/$/,"");
 
   class ApiError extends Error{
     constructor(status,code,message,details){super(message);this.name="ApiError";this.status=status;this.code=code;this.details=details;}
@@ -26,12 +27,15 @@ const VQApi=(()=>{
       res=await fetch(base+path,{method,headers,body:body!==undefined?JSON.stringify(body):undefined,signal:ctrl.signal,credentials:"omit"});
     }catch(e){
       clearTimeout(timer);
-      if(e&&e.name==="AbortError") throw new ApiError(0,"timeout","The server took too long to respond.");
-      throw new ApiError(0,"network","Can't reach the VelQora server. Make sure the backend is running.");
+      if(e&&e.name==="AbortError") throw new ApiError(0,"timeout","The server took too long to respond. Please try again.");
+      throw new ApiError(0,"network","Unable to reach the VelQora backend server. Please verify your connection or ensure the backend service is running.");
     }
     clearTimeout(timer);
     let data=null; try{data=await res.json();}catch(_){}
     if(!res.ok){
+      if(res.status===401&&typeof VQAuth!=="undefined"){
+        VQAuth.signOut();
+      }
       const err=data&&data.error;
       throw new ApiError(res.status,(err&&err.code)||"http_error",(err&&err.message)||`Request failed (${res.status}).`,err&&err.details);
     }
