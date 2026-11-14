@@ -51,7 +51,7 @@
             </div>
           </div>`;
         }).join("")}</div>`
-      : `<p class="muted">No key people could be verified from retrieved sources.</p>`;
+      : `<p class="muted">No executive profiles confirmed from retrieved sources.</p>`;
 
     // Relevant research findings combines verified developments and business insights
     const findings = [].concat(b.recent_developments || [], b.business_insights || []).filter(i => i.verification_status === "verified");
@@ -66,12 +66,12 @@
       <div class="intel-grid">
         <article class="intel-card wide">
           <h2>Company Overview</h2>
-          <p style="font-size:15px;line-height:1.6;color:var(--navy);">${esc(b.overview || "No verified overview could be established from retrieved sources.")}</p>
+          <p style="font-size:15px;line-height:1.6;color:var(--navy);">${esc(b.overview || "No verified company overview found in recent public sources.")}</p>
         </article>
 
         <article class="intel-card">
           <h2>Company Background</h2>
-          ${renderList(b.overview_items, "No additional background items were verified from retrieved sources.")}
+          ${renderList(b.overview_items, "No additional background details verified in the research window.")}
         </article>
 
         <article class="intel-card">
@@ -81,33 +81,33 @@
 
         <article class="intel-card">
           <h2>Recent Developments</h2>
-          ${renderList(b.recent_developments, "No dated developments found in the 30-day research window.")}
+          ${renderList(b.recent_developments, "No dated developments recorded within the 30-day window.")}
         </article>
 
         <article class="intel-card">
           <h2>Important News</h2>
-          ${renderList(b.important_news, "No dated news articles confirmed within the research window.")}
+          ${renderList(b.important_news, "No verified news articles published within the research window.")}
         </article>
 
         <article class="intel-card">
           <h2>Business Insights</h2>
-          ${renderList(b.business_insights, "No business insights established from retrieved sources.")}
+          ${renderList(b.business_insights, "No commercial insights established from available sources.")}
         </article>
 
         <article class="intel-card">
           <h2>Industry Information</h2>
-          ${renderList((b.industry_information || []).filter(i => i.kind !== "analysis"), "No specific industry claims verified.")}
+          ${renderList((b.industry_information || []).filter(i => i.kind !== "analysis"), "No industry-specific claims confirmed.")}
           ${tagsHtml}
         </article>
 
         <article class="intel-card">
           <h2>Industry Trends</h2>
-          ${renderList(trends, "Trend commentary is labelled as AI analysis when available.", true)}
+          ${renderList(trends, "Trend analysis is generated when relevant industry sources are available.", true)}
         </article>
 
         <article class="intel-card wide">
           <h2>Relevant Research Findings</h2>
-          ${renderList(findings.slice(0, 8), "No additional verified research findings available.")}
+          ${renderList(findings.slice(0, 8), "No further verified findings recorded for this research session.")}
         </article>
       </div>`;
   }
@@ -152,11 +152,11 @@
       </div>
 
       <div class="vq-note" style="margin-bottom:18px;padding:12px 16px;border-radius:var(--r-sm);background:rgba(255,255,255,.7);border:1px solid var(--ink-12);">
-        <strong>Grounding policy:</strong> Claims are marked <em>Verified</em> only when specific numbers, proper nouns, and key word stems match retrieved sources. AI-generated commentary is never counted as verified fact.
+        <strong>Verification standard:</strong> Claims are marked <em>Verified</em> only when figures, dates, and named entities directly match retrieved source documents. Synthesized analysis is always identified separately.
       </div>
 
       <article class="intel-card wide">
-        <h2>Retrieved Sources &amp; Grounding Evidence (${sources.length})</h2>
+        <h2>Retrieved Sources &amp; Citations (${sources.length})</h2>
         <div class="src-list">
           ${sources.length ? sources.map(src => {
             const st = src.verification_status || (src.supports_claims && src.supports_claims.length ? "verified" : "unverified");
@@ -189,15 +189,15 @@
 
       ${undatedList.length ? `
         <article class="intel-card wide" style="margin-top:16px;">
-          <h2>Undated or Outdated Information</h2>
-          <p class="muted" style="margin-bottom:8px;font-size:13px;">Claims that are grounded in sources, but outside the 30-day window or lacking a reliable date:</p>
+          <h2>Historical or Undated Information</h2>
+          <p class="muted" style="margin-bottom:8px;font-size:13px;">Source-backed claims that fall outside the 30-day window or lack a confirmed publication date:</p>
           ${renderList(undatedList, "")}
         </article>` : ""}
 
       ${(b.unverified_claims || []).length ? `
         <article class="intel-card wide" style="margin-top:16px;">
-          <h2>Unverified Claims</h2>
-          <p class="muted" style="margin-bottom:8px;font-size:13px;">Statements that could not be grounded in any retrieved source:</p>
+          <h2>Unconfirmed Claims</h2>
+          <p class="muted" style="margin-bottom:8px;font-size:13px;">Statements identified during research that could not be confirmed against primary sources:</p>
           ${renderList(b.unverified_claims, "")}
         </article>` : ""}
     `;
@@ -224,12 +224,12 @@
     const ctx = VQContext.fromLocation() || VQContext.read() || {};
     const showEmpty = (msg) => {
       const researchUrl = typeof VQContext !== "undefined" ? VQContext.href("research.html") : "research.html";
-      intelPanel.innerHTML = `<div class="empty-state">${esc(msg)} <a href="${researchUrl}">Start a new research</a>.</div>`;
-      verifyPanel.innerHTML = `<div class="empty-state">${esc(msg)} <a href="${researchUrl}">Start a new research</a>.</div>`;
+      intelPanel.innerHTML = `<div class="empty-state">${esc(msg)} <a href="${researchUrl}">Start a new research session</a>.</div>`;
+      verifyPanel.innerHTML = `<div class="empty-state">${esc(msg)} <a href="${researchUrl}">Start a new research session</a>.</div>`;
     };
 
     if (!ctx.briefing_id && !ctx.research_id) {
-      showEmpty("No active research loaded yet.");
+      showEmpty("No active research session loaded.");
       return;
     }
 
@@ -245,14 +245,14 @@
       }
 
       if (!briefingId) {
-        showEmpty("Research is still in progress. Please wait for completion.");
+        showEmpty("Research is currently in progress. Updates will appear once complete.");
         return;
       }
 
       let b = await VQApi.getBriefing(briefingId);
       if (b.status === "running" || b.status === "queued") {
-        intelPanel.innerHTML = `<div class="empty-state">Briefing is generating. Please wait a moment…</div>`;
-        verifyPanel.innerHTML = `<div class="empty-state">Briefing is generating. Please wait a moment…</div>`;
+        intelPanel.innerHTML = `<div class="empty-state">Generating briefing. This takes just a moment…</div>`;
+        verifyPanel.innerHTML = `<div class="empty-state">Generating briefing. This takes just a moment…</div>`;
         for (let i = 0; i < 45; i++) {
           await sleep(1500);
           b = await VQApi.getBriefing(briefingId);
@@ -261,7 +261,7 @@
       }
 
       if (b.status !== "completed" || !b.briefing) {
-        showEmpty((b.error && b.error.message) || "Could not retrieve completed briefing.");
+        showEmpty((b.error && b.error.message) || "Unable to retrieve completed briefing.");
         return;
       }
 

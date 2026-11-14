@@ -8,7 +8,7 @@
 
   const CHECKLIST_ITEMS = [
     "Review company overview and verified background",
-    "Verify key facts and citations for claims you plan to cite",
+    "Verify citations for any metrics or claims you plan to quote",
     "Review executive leadership profiles and recent moves",
     "Prioritize 3 primary meeting talking points",
     "Prepare responses for potential risks and open questions",
@@ -33,7 +33,7 @@
     const topRisk = (b.potential_risks || [])[0];
 
     const strategyParts = [
-      `Walk into the meeting ready to address ${entityName} focused around ${purpose}.`
+      `Focus the discussion with ${entityName} on ${purpose}.`
     ];
     if (topPoints.length) {
       strategyParts.push(`Lead the conversation with: "${topPoints[0]}"`);
@@ -42,7 +42,7 @@
       strategyParts.push(`Stay mindful of: "${topRisk.text}"`);
     }
     if (!b.ai || !b.ai.analysis_available) {
-      strategyParts.push("Note: AI analysis was unavailable for this briefing — stick to verified source facts.");
+      strategyParts.push("Note: AI strategic synthesis was unavailable for this briefing; reference verified source findings.");
     }
     return strategyParts.join(" ");
   }
@@ -140,7 +140,7 @@
               ${checklistHtml}
             </ul>
             <div class="checklist-complete-badge" id="completeBadge" ${checkedCount === totalChecks ? "" : 'style="display:none;"'}>
-              ✓ All preparations complete! You are ready to present.
+              ✓ Preparation checklist complete. Ready for your meeting.
             </div>
           </article>
         </aside>
@@ -179,11 +179,11 @@
 
     const showEmpty = (msg) => {
       const researchUrl = typeof VQContext !== "undefined" ? VQContext.href("research.html") : "research.html";
-      meetRoot.innerHTML = `<div class="empty-state">${esc(msg)} <a href="${researchUrl}">Start a new research</a>.</div>`;
+      meetRoot.innerHTML = `<div class="empty-state">${esc(msg)} <a href="${researchUrl}">Start a new research session</a>.</div>`;
     };
 
     if (!ctx.briefing_id && !ctx.research_id) {
-      showEmpty("No active meeting research loaded.");
+      showEmpty("No active research briefing loaded.");
       return;
     }
 
@@ -199,13 +199,13 @@
       }
 
       if (!briefingId) {
-        showEmpty("Research briefing is still in progress. Please wait.");
+        showEmpty("Research briefing is in progress. Please check back shortly.");
         return;
       }
 
       let b = await VQApi.getBriefing(briefingId);
       if (b.status === "running" || b.status === "queued") {
-        meetRoot.innerHTML = `<div class="empty-state">Briefing is generating. Please wait a moment…</div>`;
+        meetRoot.innerHTML = `<div class="empty-state">Generating meeting preparation. Please wait…</div>`;
         for (let i = 0; i < 45; i++) {
           await sleep(1500);
           b = await VQApi.getBriefing(briefingId);
@@ -214,7 +214,7 @@
       }
 
       if (b.status !== "completed" || !b.briefing) {
-        showEmpty((b.error && b.error.message) || "Could not load meeting preparation data.");
+        showEmpty((b.error && b.error.message) || "Unable to load meeting preparation details.");
         return;
       }
 

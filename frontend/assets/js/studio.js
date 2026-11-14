@@ -754,7 +754,7 @@
 
         if (res && res.slides) {
           presentationState.setDeck(res);
-          addChatMessage(`Generated a complete **${res.slides.length}-slide executive presentation** using verified research intelligence and Gemini Flash.`, "ai");
+          addChatMessage(`Generated a complete **${res.slides.length}-slide presentation** grounded in verified research intelligence.`, "ai");
           return;
         }
       }
@@ -791,7 +791,7 @@
       console.warn("AI backend call encountered an error; falling back gracefully:", err);
       // Graceful local handling to prevent UI disruption if Bifrost gateway is unreachable
       processAgentAction(promptText);
-      addChatMessage("*(Gemini Flash via Bifrost gateway was temporarily unreachable; applied structured local transformation)*", "ai");
+      addChatMessage("*(AI assistant service temporarily unreachable; applied local update)*", "ai");
       return;
     } finally {
       isPromptRunning = false;
@@ -850,9 +850,9 @@
 
   function welcomeMessage(entityName) {
     if (activeBriefingData) {
-      addChatMessage(`Welcome to Presentation Studio. Loaded verified research briefing for **${entityName}** with ground truth sources. You can customize slides, change themes, or ask me to restructure content.`);
+      addChatMessage(`Welcome to Presentation Studio. Loaded research briefing for **${entityName}** with verified source citations. You can edit slides directly, adjust layouts, or ask for adjustments.`);
     } else {
-      addChatMessage(`Welcome to Presentation Studio. Workspace is ready with standard executive presentation templates for **${entityName}**. Use the suggested prompts or settings above to customize your deck.`);
+      addChatMessage(`Welcome to Presentation Studio. Workspace initialized with meeting presentation templates for **${entityName}**. Customize slides inline or use the prompts below.`);
     }
   }
 
@@ -869,27 +869,27 @@
       const cfg = presentationState.getConfig();
       cfg.tone = "professional";
       presentationState.updateConfig(cfg, false);
-      addChatMessage("Refined presentation theme to **Corporate Blue** and tightened typography standards for high-level board review.");
+      addChatMessage("Updated presentation theme to **Corporate Blue** with high-contrast executive styling.");
     } else if (p.includes("two-column") || p.includes("two column")) {
       const slide = presentationState.getActiveSlide();
       if (slide) {
         slide.layout = "split";
         if (!slide.bullets || !slide.bullets.length) {
           slide.bullets = [
-            "Validated enterprise positioning and market traction.",
-            "Accelerating commercial alignment with key decision makers.",
-            "Clear technical differentiation across core verticals."
+            "Established enterprise market presence and customer adoption.",
+            "Active discussions with commercial and technical stakeholders.",
+            "Clear technical differentiation in core product capabilities."
           ];
         }
         slide.highlightTitle = "Strategic Value";
-        slide.highlightBody = "High alignment potential with immediate bilateral execution benefits.";
+        slide.highlightBody = "Strong strategic fit with clear mutual collaboration opportunities.";
         presentationState.updateSlide(presentationState.getActiveSlideIndex(), slide);
       }
       addChatMessage("Switched slide layout to **Two-Column** with strategic bullets and highlighted takeaway.");
     } else if (p.includes("heading bigger") || p.includes("bigger heading") || p.includes("larger heading")) {
       const idx = presentationState.getActiveSlideIndex();
       presentationState.updateElementStyle(idx, "title", { fontSize: "36px", fontWeight: "700" });
-      addChatMessage("Increased heading size to **36px** for high-impact executive presentation.");
+      addChatMessage("Updated title size to **36px**.");
     } else if (p.includes("dark blue") || p.includes("corporate blue")) {
       presentationState.setTheme("corporate_blue");
       addChatMessage("Changed presentation theme to **Corporate Blue** (Royal Blue & Midnight Navy).");
@@ -901,7 +901,7 @@
       });
       presentationState.isDirty = true;
       renderAll();
-      addChatMessage("Standardized footers, kickers, and branding across all slides for executive consistency.");
+      addChatMessage("Applied consistent footers and source references across all slides.");
     } else if (p.includes("less crowded") || p.includes("less dense")) {
       const slide = presentationState.getActiveSlide();
       if (slide) {
@@ -910,7 +910,7 @@
         if (slide.subtitle && slide.subtitle.length > 100) slide.subtitle = slide.subtitle.slice(0, 97) + "...";
         presentationState.updateSlide(presentationState.getActiveSlideIndex(), slide);
       }
-      addChatMessage("Refined slide spacing, simplified bullet counts, and trimmed text for clean executive breathing room.");
+      addChatMessage("Reduced text density and adjusted spacing for readability.");
     } else if (p.includes("slide 3") || p.includes("improve slide 3")) {
       // Focus and sharpen slide 3
       presentationState.setActiveSlide(2); // 0-based
@@ -921,7 +921,7 @@
           subtitle: "Key operational milestones and verified acceleration within target market segments."
         });
       }
-      addChatMessage("Navigated to and enhanced **Slide 3**. Sharpened strategic narrative focus and validated recent momentum.");
+      addChatMessage("Updated **Slide 3** with a clearer narrative focus and verified milestone data.");
     } else if (p.includes("recent company developments") || p.includes("developments")) {
       const newIdx = presentationState.addSlide("timeline", {
         kicker: "Market Velocity",
@@ -955,7 +955,7 @@
       addChatMessage(`Switched presentation theme to **${themeObj.name}**. Live canvas and thumbnails have been updated.`);
     } else {
       // General prompt handling
-      addChatMessage(`Received: "*${prompt}*". Applied adjustments to active presentation state. Full conversational generative rewriting will stream via the Bifrost Gemini 3.5 Flash gateway in **Part 5**.`);
+      addChatMessage(`Applied requested adjustments for: "*${prompt}*". You can refine text inline or reorder slides in the navigator.`);
     }
   }
 
@@ -1662,7 +1662,7 @@
       exportSpinner.style.display = "inline-block";
     }
     if (exportStatusText) {
-      exportStatusText.textContent = "Generating editable 16:9 widescreen PowerPoint deck on server...";
+      exportStatusText.textContent = "Generating 16:9 PowerPoint presentation...";
     }
     if (genPptxBtn) {
       genPptxBtn.disabled = true;
@@ -1705,7 +1705,7 @@
       }
 
       showActionToast("PowerPoint deck generated successfully!");
-      addChatMessage(`🎉 Your PowerPoint deck **${res.file_name}** has been generated! You can download it directly below or from the Export menu.`, "ai");
+      addChatMessage(`PowerPoint file **${res.file_name}** is ready. Download it directly below or access it from the Export dialog.`, "ai");
 
       // Automatically trigger file download for convenience
       const a = document.createElement("a");

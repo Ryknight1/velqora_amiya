@@ -98,7 +98,7 @@
     let consecutiveFails = 0;
     while (true) {
       if (Date.now() - start > MAX_POLL_MS) {
-        throw new VQApi.ApiError(0, "timeout", "This research is taking longer than expected. Please check back shortly.");
+        throw new VQApi.ApiError(0, "timeout", "The research request timed out. Please check your network connection or try again.");
       }
       await sleep(Date.now() - start > 30000 ? 2000 : 1200);
       try {
@@ -119,14 +119,14 @@
   function validateInput() {
     const name = rName.value.trim();
     if (!name || name.length < 2) {
-      showMsg("Please enter the company or person name you are meeting.");
+      showMsg("Enter a company or executive name to begin research.");
       rName.focus();
       return null;
     }
     const url = rUrl.value.trim();
     if (url) {
       if (/^(javascript|data|file|ftp):/i.test(url)) {
-        showMsg("Only web URLs (http / https) are allowed.");
+        showMsg("Please enter a valid web URL starting with http:// or https://");
         rUrl.focus();
         return null;
       }
@@ -144,7 +144,7 @@
   async function followThroughBriefing(researchJob, entityName) {
     let briefingId = researchJob.briefing_id;
     if (!briefingId) {
-      updateProgress(80, "Triggering briefing generation…", "analyzing");
+      updateProgress(80, "Synthesizing executive briefing…", "analyzing");
       const gen = await VQApi.generateBriefing(researchJob.research_id, false);
       briefingId = gen.briefing_id;
     }
@@ -216,13 +216,13 @@
 
     } catch (err) {
       console.error("[VelQora Research]", err);
-      let errorText = err.message || "An error occurred during research. Please try again.";
+      let errorText = err.message || "Research could not be completed. Please try again.";
       if (err.code === "tavily_not_configured") {
-        errorText = "Web research is not configured. Add TAVILY_API_KEY to backend/.env and restart the server.";
+        errorText = "Search provider is not configured. Add TAVILY_API_KEY to the server configuration.";
       } else if (err.code === "bifrost_not_configured") {
-        errorText = "The AI gateway is not configured. Set BIFROST_BASE_URL and BIFROST_MODEL in backend/.env.";
+        errorText = "AI analysis service is not configured. Set BIFROST_BASE_URL and BIFROST_MODEL in the server environment.";
       } else if (err.code === "network") {
-        errorText = "Cannot reach the VelQora backend server. Please verify your connection or ensure the service is running.";
+        errorText = "Unable to connect to the VelQora API. Please verify your connection or ensure the server is running.";
       }
       showMsg(errorText, "error");
       setBusy(false, 'Retry Research <span class="arr">→</span>');
@@ -278,7 +278,7 @@
   // Health check warning if backend down
   VQApi.health().catch(e => {
     if (e.code === "network") {
-      showMsg("The VelQora backend is not reachable. Start the backend with uvicorn app.main:app, then refresh.", "error");
+      showMsg("Unable to connect to the VelQora API server. Please check your connection and refresh.", "error");
     }
   });
 })();

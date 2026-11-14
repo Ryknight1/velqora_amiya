@@ -33,7 +33,7 @@ const VelQora={
     return {
       intel:{
         entity:b.entity.name, tag:"Live research",
-        overview:b.overview||"No verified overview could be established from the retrieved sources.",
+        overview:b.overview||"No verified overview could be confirmed from public sources.",
         people:(b.key_people||[]).map(p=>({n:p.name,r:p.role||""})),
         developments:dated(b.recent_developments||[]),
         devEmpty:`No verified developments in the last ${days} days.`,
@@ -51,7 +51,7 @@ const VelQora={
         talking:(b.meeting_talking_points||[]).slice(0,3).map(i=>i.text),
         questions:(b.suggested_questions||[]).slice(0,3).map(i=>i.text),
         risks:(b.potential_risks||[]).slice(0,3).map(i=>i.text),
-        empty:ai?"None identified from the sources.":noAi,
+        empty:ai?"None identified from available sources.":noAi,
         href:"briefing.html?id="+encodeURIComponent(b.briefing_id),chip:"Ready"
       }
     };
@@ -158,14 +158,14 @@ const BriefPage={
     const aiOff=!b.ai.analysis_available?`<p class="muted">AI analysis was unavailable for this briefing.</p>`:null;
     const sources=b.sources.length?b.sources.map(s=>`<div class="bsrc" id="src-${esc(s.source_id)}"><b>${esc(s.source_id)}</b><div><a href="${esc(safeHref(s.url))}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a><small>${esc(s.publisher)} · ${s.published_date?esc(s.published_date):"undated"} · ${esc(s.source_type.replace("_"," "))} · ${esc(s.verification_status)}${s.supports_claims.length?` · supports ${esc(s.supports_claims.join(", "))}`:""}</small></div></div>`).join(""):`<p class="muted">No sources were retrieved.</p>`;
     const extra=[];
-    if(b.undated_information.length) extra.push(this.sec("•","Not confirmed as recent",`<p class="muted">Grounded in a source, but the source is undated or older than the research period, so it is not listed as a recent development.</p>${this.list(b.undated_information)}`));
-    if(b.unverified_claims.length) extra.push(this.sec("•","Unverified claims (excluded)",`<p class="muted">The AI drafted these but they could not be matched to retrieved sources. They are not part of the verified briefing.</p><ul>${b.unverified_claims.map(i=>`<li><span>${esc(i.text)}<span class="muted"> — ${esc(i.note||"")}</span></span></li>`).join("")}</ul>`));
+    if(b.undated_information.length) extra.push(this.sec("•","Not confirmed as recent",`<p class="muted">Source-backed information that is undated or falls outside the 30-day research window.</p>${this.list(b.undated_information)}`));
+    if(b.unverified_claims.length) extra.push(this.sec("•","Unverified claims (excluded)",`<p class="muted">Generated statements that could not be corroborated with retrieved sources. Excluded from the verified briefing.</p><ul>${b.unverified_claims.map(i=>`<li><span>${esc(i.text)}<span class="muted"> — ${esc(i.note||"")}</span></span></li>`).join("")}</ul>`));
     if(b.warnings.length) extra.push(`<section class="bsec"><h2>Notes</h2><ul>${b.warnings.map(w=>`<li><span>${esc(w)}</span></li>`).join("")}</ul></section>`);
 
     $("#briefRoot").innerHTML=`
       <div class="brief-head"><div class="eyebrow"><span class="dot"></span>Pre-meeting briefing</div><h1>${esc(b.entity.name)}</h1><div class="brief-meta">${meta}</div></div>
       <div class="brief-bar"><span><b>${sum.verified_claims}</b> of ${sum.total_claims} claims verified${sum.undated_claims?` · ${sum.undated_claims} undated`:""}${sum.unverified_claims?` · ${sum.unverified_claims} unverified`:""}</span><div class="bar"><i style="width:${pct}%"></i></div></div>
-      <p class="vq-note">“Verified” means the claim’s wording and figures were found in a retrieved source. It does not guarantee the source itself is correct — check key facts before relying on them.</p>
+      <p class="vq-note"><strong>Verification note:</strong> “Verified” indicates figures and assertions matched retrieved source text. Confirm critical metrics directly with official filings or primary representatives.</p>
       ${this.sec(1,"Company / Person Overview",b.overview_items.length?this.list(b.overview_items):`<p class="muted">No verified overview could be established.</p>`,ok)}
       ${this.sec(2,"Key People and Leadership",people,ok)}
       ${this.sec(3,`Recent Developments (${b.research_period.start_date} → ${b.research_period.end_date})`,this.list(b.recent_developments),ok)}
@@ -186,17 +186,17 @@ const BriefPage={
     const q=new URLSearchParams(location.search);
     const id=q.get("id")||q.get("briefing_id")||(typeof VQContext!=="undefined"&&VQContext.read()&&VQContext.read().briefing_id)||"";
     const say=(t,err)=>{root.innerHTML=`<div class="brief-head"><h1>${err?"Briefing unavailable":"Loading briefing…"}</h1><p class="vq-note" style="margin-top:10px">${esc(t)}</p><div class="brief-actions"><a class="btn btn-ghost" href="index.html">← Back to VelQora</a></div></div>`;};
-    if(!/^[a-f0-9]{32}$/.test(id)) return say("This link is missing a valid briefing id.",true);
+    if(!/^[a-f0-9]{32}$/.test(id)) return say("Invalid or missing briefing ID in link.",true);
     say("Fetching your briefing…");
     try{
       for(let i=0;i<90;i++){
         const r=await VQApi.getBriefing(id);
         if(r.status==="completed"&&r.briefing) return this.render(r.briefing);
         if(r.status==="failed") return say((r.error&&r.error.message)||"The briefing could not be generated.",true);
-        say(r.message||"Preparing your brief…");
+        say(r.message||"Loading briefing data…");
         await sleep(1500);
       }
-      say("This is taking longer than expected. Reload to check again.",true);
+      say("This request timed out. Please refresh the page to try again.",true);
     }catch(e){ say(e.message||"Could not load the briefing.",true); }
   }
 };

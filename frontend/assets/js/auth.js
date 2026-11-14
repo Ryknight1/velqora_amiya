@@ -55,8 +55,8 @@ const VQAuth=(()=>{
   const $id=i=>document.getElementById(i);
   let mode="login";
   const copy={
-    login:{title:"Welcome back",sub:"Sign in to keep your briefings with your account.",btn:"Sign In →",sw:"New to VelQora? ",swBtn:"Create an account",pw:"current-password"},
-    register:{title:"Create your account",sub:"Free while we're in preview. Your password is stored hashed, never in plain text.",btn:"Create account →",sw:"Already have an account? ",swBtn:"Sign in",pw:"new-password"}
+    login:{title:"Welcome back",sub:"Sign in to access your saved briefings and research history.",btn:"Sign In →",sw:"New to VelQora? ",swBtn:"Create an account",pw:"current-password"},
+    register:{title:"Create your account",sub:"Create an account to save research briefings and presentation decks.",btn:"Create account →",sw:"Already have an account? ",swBtn:"Sign in",pw:"new-password"}
   };
   function setMode(m){
     mode=m; const c=copy[m];
@@ -72,13 +72,13 @@ const VQAuth=(()=>{
     const email=$id("aEmail").value.trim(), pass=$id("aPass").value, name=$id("aName").value.trim();
     const fail=t=>{msg.textContent=t;msg.className="vq-msg";msg.hidden=false;};
     if(!email||!pass) return fail("Enter your email and password.");
-    if(mode==="register"&&pass.length<8) return fail("Use at least 8 characters for your password.");
+    if(mode==="register"&&pass.length<8) return fail("Password must be at least 8 characters.");
     busy=true; btn.classList.add("busy"); msg.hidden=true;
     try{
       const resp=mode==="login"?await VQApi.login(email,pass):await VQApi.register(email,pass,name);
       VQAuth.setSession(resp);
       location.href=typeof VQContext!=="undefined"?VQContext.href("index.html"):"index.html";
-    }catch(err){ fail(err.message||"Something went wrong."); }
+    }catch(err){ fail(err.message||"Unable to complete request. Please try again."); }
     finally{ busy=false; btn.classList.remove("busy"); }
   });
   setMode("login");

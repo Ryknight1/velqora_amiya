@@ -10,7 +10,7 @@ class PresentationState {
       id: "corporate_blue",
       alias: "navy",
       name: "Corporate Blue",
-      description: "Deep royal blue and midnight navy. High-authority boardroom aesthetic.",
+      description: "Deep royal blue and midnight navy for formal executive presentations.",
       bg: "#0B1E3F",
       accent: "#FF5858",
       primary: "#1E40AF",
@@ -32,7 +32,7 @@ class PresentationState {
       id: "dark_executive",
       alias: "coral",
       name: "Dark Executive",
-      description: "Obsidian dark background with vivid coral accents and executive precision.",
+      description: "Dark slate background with coral accents for high-contrast viewing.",
       bg: "#10141D",
       accent: "#FF5858",
       primary: "#1E293B",
@@ -43,7 +43,7 @@ class PresentationState {
       id: "modern_gradient",
       alias: "gradient",
       name: "Modern Gradient",
-      description: "Vibrant indigo and violet twilight gradient with high-impact magenta highlights.",
+      description: "Indigo and violet gradient styling with vibrant accent highlights.",
       bg: "#1E1B4B",
       accent: "#EC4899",
       primary: "#6366F1",
@@ -54,7 +54,7 @@ class PresentationState {
       id: "clean_business",
       alias: "editorial",
       name: "Clean Business",
-      description: "Sophisticated corporate slate with crisp teal and neutral gray structuring.",
+      description: "Neutral slate palette with teal accents for structured briefings.",
       bg: "#F1F5F9",
       accent: "#0D9488",
       primary: "#1E293B",
@@ -65,7 +65,7 @@ class PresentationState {
       id: "tech_innovation",
       alias: "slate",
       name: "Technology and Innovation",
-      description: "High-contrast cyber slate with electric cyan and emerald tech highlights.",
+      description: "Dark monochrome palette with cyan highlights for technical discussions.",
       bg: "#030712",
       accent: "#06B6D4",
       primary: "#0B132B",
@@ -526,10 +526,10 @@ class PresentationState {
           bullets: [
             "Market-leading operational efficiency and unified platform capabilities.",
             "Demonstrated enterprise traction across high-value client segments.",
-            "Strong verified moat with defensible technological advantage."
+            "Defensible product advantage supported by proprietary technology."
           ],
           highlightTitle: "Key Strategic Takeaway",
-          highlightBody: "The company's expansion into global enterprise accounts provides an immediate commercial synergy window.",
+          highlightBody: "Expansion into enterprise accounts presents an immediate partnership opportunity.",
           footer: "VelQora Intelligence • Source Verified"
         };
       case "metrics":
@@ -537,12 +537,12 @@ class PresentationState {
           layout: "metrics",
           kicker: "Key Metrics",
           title: "Quantitative Indicators & Verification Matrix",
-          subtitle: "Verified ground truth metrics from multi-source cross-referencing.",
+          subtitle: "Verified key indicators confirmed across multiple public sources.",
           metrics: [
             { num: "94%", label: "Source Grounding", note: "Verified against multi-source evidence" },
             { num: "30 Days", label: "Research Window", note: "Recent verified market developments" },
             { num: "4.8x", label: "Enterprise Velocity", note: "Reported growth in target segments" },
-            { num: "100%", label: "Deterministic Check", note: "Zero hallucinations in factual citations" }
+            { num: "100%", label: "Source Match", note: "Directly grounded in cited sources" }
           ],
           footer: "VelQora Grounding Matrix"
         };
@@ -583,7 +583,7 @@ class PresentationState {
             "Address key operational risks early to build shared trust and clarity.",
             "Propose concrete next steps with designated stakeholder ownership."
           ],
-          takeaway: "Enter the conversation prepared with verified facts to anchor high-value strategic momentum.",
+          takeaway: "Anchor discussion on verified facts to establish shared priorities early.",
           footer: "VelQora Action Plan"
         };
       case "cards":
@@ -595,8 +595,8 @@ class PresentationState {
           subtitle: "Three foundational pillars powering sustainable growth and defensibility.",
           cards: [
             { tag: "Pillar 01", title: "Defensible Platform Advantage", desc: "Proprietary technology stack creating high switching costs and customer stickiness.", badge: "Verified Fact" },
-            { tag: "Pillar 02", title: "Expanding Market Opportunity", desc: "Aggressive tailwinds accelerating enterprise demand across primary verticals.", badge: "Market Trend" },
-            { tag: "Pillar 03", title: "Commercial Synergies", desc: "Clear bilateral value creation through shared capabilities and audience reach.", badge: "Strategic Fit" }
+            { tag: "Pillar 02", title: "Expanding Market Opportunity", desc: "Growing enterprise adoption across core industry sectors.", badge: "Market Trend" },
+            { tag: "Pillar 03", title: "Commercial Synergies", desc: "Clear mutual value through complementary capabilities and reach.", badge: "Strategic Fit" }
           ],
           footer: "VelQora Strategic Briefing"
         };
@@ -622,7 +622,7 @@ class PresentationState {
         cards: [
           { tag: "Mission", title: "Core Business Mission", desc: `Delivering mission-critical solutions in modern enterprise environments.`, badge: "Verified" },
           { tag: "Market", title: "Market Footprint", desc: "Active commercial engagement with top-tier international customers.", badge: "Verified" },
-          { tag: "Pillars", title: "Operating Differentiation", desc: "High velocity execution combined with rigorous architectural reliability.", badge: "Insight" }
+          { tag: "Pillars", title: "Operating Differentiation", desc: "Reliable execution supported by modern infrastructure standards.", badge: "Insight" }
         ],
         footer: `${entityName} • Overview`
       },
@@ -633,8 +633,8 @@ class PresentationState {
         title: "Recent Developments & Timeline",
         subtitle: "Key verified announcements and strategic milestones from the past 30 days.",
         events: [
-          { date: "Recent", title: "Platform Expansion", desc: "Announced enhanced service capabilities to meet surging enterprise customer demand.", source: "Verified News" },
-          { date: "Current Quarter", title: "Commercial Acceleration", desc: "Reported record quarter-over-quarter growth across strategic focus verticals.", source: "Marketwire" },
+          { date: "Recent", title: "Platform Expansion", desc: "Expanded product capabilities to support enterprise customer growth.", source: "Verified News" },
+          { date: "Current Quarter", title: "Commercial Acceleration", desc: "Reported consistent quarterly growth across primary market segments.", source: "Marketwire" },
           { date: "Milestone", title: "Leadership & Hiring", desc: "Scaled executive and technical leadership teams to support continued growth.", source: "Press Release" }
         ],
         footer: `${entityName} • Recent News`
@@ -657,7 +657,7 @@ class PresentationState {
         layout: "split",
         kicker: "Discussion Topics",
         title: "Strategic Talking Points",
-        subtitle: "High-priority discussion angles to lead with confidence and precision.",
+        subtitle: "Recommended agenda topics and strategic questions for the discussion.",
         bullets: [
           "Acknowledge recent momentum and explore mutual collaboration touchpoints.",
           "Identify how complementary capabilities address urgent industry bottlenecks.",
@@ -672,7 +672,7 @@ class PresentationState {
         layout: "metrics",
         kicker: "Strategic Assessment",
         title: "Key Questions & Risk Factors",
-        subtitle: "Proactive risk mitigation and strategic inquiries for deep alignment.",
+        subtitle: "Key questions and potential risks to review before the meeting.",
         metrics: [
           { num: "01", label: "Strategic Priority", note: "What is their top business objective for this quarter?" },
           { num: "02", label: "Timeline & Budget", note: "What is the intended timeline and resource commitment?" },
@@ -692,7 +692,7 @@ class PresentationState {
           "Address key questions early to establish credibility and transparency.",
           "Agree upon concrete follow-up deliverables and scheduled milestone review."
         ],
-        takeaway: "Be ready for what matters: enter every conversation equipped with verified intelligence.",
+        takeaway: "Enter the conversation prepared with verified facts and clear next steps.",
         footer: "VelQora Presentation Studio"
       }
     ];

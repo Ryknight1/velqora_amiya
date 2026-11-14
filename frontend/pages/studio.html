@@ -85,7 +85,7 @@
       </button>
       <button type="button" class="btn btn-coral btn-toolbar-action btn-export-action" id="exportBtn" title="Export Presentation">
         <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span class="btn-label-desktop">Export / PowerPoint</span>
+        <span class="btn-label-desktop">Export Presentation</span>
         <span class="btn-label-mobile">Export PPTX</span>
       </button>
     </div>
@@ -116,7 +116,7 @@
         <div class="panel-h-title">
           <div class="ai-avatar-badge">VQ</div>
           <span>VelQora AI</span>
-          <span class="ai-status-indicator" title="Ready • LLM connected in Part 5"></span>
+          <span class="ai-status-indicator" title="AI Assistant Ready"></span>
         </div>
         <button type="button" class="icon-btn" id="regenBtn" title="Regenerate last response">↻ Regenerate</button>
       </div>
@@ -141,7 +141,7 @@
         <div class="typing-dots">
           <span></span><span></span><span></span>
         </div>
-        <span>VelQora is crafting your slides...</span>
+        <span>Generating slide presentation...</span>
       </div>
 
       <!-- Message Input Form -->
@@ -165,7 +165,7 @@
       <div class="slide-title-bar">
         <label for="slideTitleInput" class="sr-only">Slide Title</label>
         <input type="text" id="slideTitleInput" placeholder="Slide Title" maxlength="120" title="Click to rename slide">
-        <button type="button" class="btn-ai-regen" id="aiRegenSlideBtn" title="Regenerate this slide with Bifrost Gemini Flash">⚡ AI Regenerate Slide</button>
+        <button type="button" class="btn-ai-regen" id="aiRegenSlideBtn" title="Regenerate this slide using verified research">⚡ Regenerate Slide</button>
       </div>
 
       <div class="canvas-wrap">
@@ -272,8 +272,8 @@
         <select id="cfgSlideCount">
           <option value="5">5 slides (Executive Brief)</option>
           <option value="7" selected>7 slides (Standard Briefing — Recommended)</option>
-          <option value="10">10 slides (Comprehensive Evaluation)</option>
-          <option value="12">12 slides (In-Depth Due Diligence)</option>
+          <option value="10">10 slides (Detailed Briefing)</option>
+          <option value="12">12 slides (Extended Evaluation)</option>
         </select>
       </div>
       <div class="config-group">
@@ -316,7 +316,7 @@
         <select id="cfgDetail">
           <option value="summary">Executive Summary (High-Level Takeaways)</option>
           <option value="balanced" selected>Balanced (Key Insights & Supporting Facts)</option>
-          <option value="deep">In-Depth (Comprehensive Deep Dive & Sources)</option>
+          <option value="deep">Detailed (Expanded Citations & Source Analysis)</option>
         </select>
       </div>
       <div class="config-group">
@@ -394,7 +394,7 @@
     </div>
     <div class="modal-body">
       <p style="font-size:12.5px;color:var(--ink-60);margin-bottom:12px;">
-        Review previous snapshots or restore an earlier version. An auto-save is created before restoring so current work is never lost.
+        Review snapshots or restore an earlier version. An automatic backup is created before restoring.
       </p>
       <div style="display:flex;gap:8px;margin-bottom:14px;">
         <input type="text" id="snapshotSummaryInput" placeholder="Version notes (e.g. Pre-board review polish)..." style="flex:1;height:32px;padding:4px 8px;font-size:12px;border:1px solid var(--ink-16);border-radius:6px;">
@@ -411,7 +411,7 @@
 <div class="modal-overlay" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
   <div class="modal-card">
     <div class="modal-card-header">
-      <h2 id="exportModalTitle">Export & PowerPoint Generation</h2>
+      <h2 id="exportModalTitle">Export Presentation</h2>
       <button type="button" class="modal-close-btn" id="closeExportModalBtn" aria-label="Close export modal">×</button>
     </div>
     <div class="modal-body">
@@ -425,9 +425,9 @@
         <!-- PowerPoint Option -->
         <div class="export-item highlighted-export">
           <div class="export-item-info">
-            <h4 style="font-size:14px;color:var(--deep);font-weight:700;">Genuine PowerPoint (.pptx) Deck</h4>
+            <h4 style="font-size:14px;color:var(--deep);font-weight:700;">PowerPoint (.pptx) Presentation</h4>
             <p style="margin-bottom:6px;">
-              Editable 16:9 widescreen presentation generated server-side with python-pptx. Shapes, cards, text frames, speaker notes, and column charts are 100% editable in PowerPoint, Keynote, or Google Slides.
+              Standard 16:9 widescreen deck compatible with Microsoft PowerPoint, Apple Keynote, and Google Slides. All cards, text boxes, and speaker notes remain fully editable.
             </p>
             <div id="pptxExportDetails" style="font-size:11.5px;color:var(--ink-50);display:none;"></div>
           </div>
@@ -440,8 +440,8 @@
         <!-- PDF Print Option -->
         <div class="export-item">
           <div class="export-item-info">
-            <h4>Export PDF (print)</h4>
-            <p>Clean high-resolution 16:9 landscape presentation PDF via browser print dialog.</p>
+            <h4>Print to PDF</h4>
+            <p>High-resolution 16:9 landscape PDF generated using your browser's print engine.</p>
           </div>
           <button type="button" class="btn btn-ghost" id="exportPdfBtn">Print to PDF →</button>
         </div>

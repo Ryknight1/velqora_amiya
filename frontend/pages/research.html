@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>New Research — VelQora</title>
-<meta name="description" content="Start company or person research for your next meeting.">
+<meta name="description" content="Initiate source-grounded research on companies or executives before your next meeting.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%23182444'/%3E%3Cpath d='M10.6 15 18 28' stroke='%23F4EDE0' stroke-width='4.2' stroke-linecap='round'/%3E%3Cpath d='M18 28 29.8 10.5' stroke='%23FF5858' stroke-width='4.4' stroke-linecap='round'/%3E%3Ccircle cx='32.2' cy='30' r='2' fill='%23FF5858'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,11 +26,11 @@
   <div class="page-wrap">
     <p class="page-kicker">Workflow · Step 1</p>
     <h1 class="page-title">New Research</h1>
-    <p class="page-lead">Enter who you are meeting. VelQora researches recent public information, verifies claims with timestamped sources, and prepares your briefing.</p>
+    <p class="page-lead">Specify a company or executive. VelQora analyzes recent public developments, verifies claims against dated sources, and structures your meeting briefing.</p>
 
     <div class="active-ctx-banner" id="activeBanner" hidden>
       <div>
-        <span>Active research loaded for <strong id="activeEntityName"></strong>.</span>
+        <span>Active research session: <strong id="activeEntityName"></strong>.</span>
       </div>
       <div>
         <a id="activeIntelLink" href="intelligence.html">View Intelligence →</a>
@@ -41,13 +41,13 @@
       <div class="field">
         <label for="rName">Company or Person Name <span class="req">*</span></label>
         <input id="rName" name="name" maxlength="120" required autocomplete="organization" placeholder="e.g. Aurelia Systems or Dr. Elena Vance">
-        <span class="field-hint">We search recent public news, leadership profiles, and developments across the last 30 days.</span>
+        <span class="field-hint">Searches verified news, leadership moves, and public developments within the past 30 days.</span>
       </div>
 
       <div class="field">
         <label for="rUrl">Company Website or LinkedIn URL (optional)</label>
         <input id="rUrl" name="url" maxlength="300" inputmode="url" placeholder="https://example.com or linkedin.com/company/…">
-        <span class="field-hint">Helps target official domain announcements and verified profiles.</span>
+        <span class="field-hint">Prioritizes official press releases, domain announcements, and verified executive profiles.</span>
       </div>
 
       <div class="research-grid">
@@ -68,7 +68,7 @@
       <div class="field">
         <label for="rPurpose">Meeting Purpose (optional)</label>
         <input id="rPurpose" name="purpose" maxlength="200" placeholder="e.g. Strategic partnership, executive briefing, sales discussion…">
-        <span class="field-hint">Tailors the strategic talking points, questions, and risk analysis.</span>
+        <span class="field-hint">Focuses key talking points, agenda questions, and risk analysis on your meeting goals.</span>
       </div>
 
       <button class="btn btn-coral btn-start-research mag" id="goBtn" type="submit">Start Research <span class="arr">→</span></button>
