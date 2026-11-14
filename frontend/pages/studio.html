@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%23182444'/%3E%3Cpath d='M10.6 15 18 28' stroke='%23F4EDE0' stroke-width='4.2' stroke-linecap='round'/%3E%3Cpath d='M18 28 29.8 10.5' stroke='%23FF5858' stroke-width='4.4' stroke-linecap='round'/%3E%3Ccircle cx='32.2' cy='30' r='2' fill='%23FF5858'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/variables.css">
 <link rel="stylesheet" href="../assets/css/global.css">
 <link rel="stylesheet" href="../assets/css/animations.css">
@@ -20,85 +20,320 @@
 <div class="sky"><div class="cloud c1"></div><div class="cloud c2"></div></div>
 <div class="grain"></div>
 <header class="nav" id="nav"></header>
+
 <main class="app-main">
+  <!-- Studio Header & Action Toolbar -->
   <div class="studio-head">
-    <div>
+    <div class="studio-head-left">
       <p class="page-kicker">Workflow · Step 4</p>
       <h1 class="page-title">Make Your Meeting Presentation</h1>
       <p class="page-lead">Turn your research into a presentation that makes every conversation count.</p>
     </div>
     <div class="studio-actions">
-      <span class="dirty" id="dirtyFlag" hidden>Unsaved changes</span>
-      <button type="button" class="btn btn-ghost" id="undoBtn">Undo</button>
-      <button type="button" class="btn btn-ghost" id="redoBtn">Redo</button>
+      <div class="status-badge-wrap">
+        <span class="dirty-badge" id="dirtyFlag" hidden>● Unsaved changes</span>
+        <span class="saved-badge" id="savedBadge">✓ Saved</span>
+      </div>
+      <button type="button" class="btn btn-ghost" id="undoBtn" disabled title="Undo (Ctrl+Z)">Undo</button>
+      <button type="button" class="btn btn-ghost" id="redoBtn" disabled title="Redo (Ctrl+Y)">Redo</button>
+      <button type="button" class="btn btn-ghost" id="themeBtn">
+        <span class="theme-dot" id="themeDot"></span>
+        <span id="themeBtnLabel">Theme</span>
+      </button>
+      <button type="button" class="btn btn-ghost" id="addSlideBtn">+ Add Slide</button>
+      <button type="button" class="btn btn-ghost" id="configBtn">⚙️ Setup</button>
+      <button type="button" class="btn btn-ghost" id="previewBtn">Preview</button>
       <button type="button" class="btn btn-ghost" id="saveBtn">Save</button>
-      <button type="button" class="btn btn-ghost" id="historyBtn">Versions</button>
-      <button type="button" class="btn btn-ghost" id="previewBtn">Preview Presentation</button>
-      <button type="button" class="btn btn-coral" id="exportBtn">Generate PowerPoint</button>
+      <button type="button" class="btn btn-coral" id="exportBtn">Export</button>
     </div>
   </div>
+
+  <!-- Mobile View Switcher Tabs -->
   <div class="studio-tabs" role="tablist">
-    <button type="button" class="on" data-panel="chatPanel">AI Chat</button>
-    <button type="button" data-panel="editorPanel">Editor</button>
-    <button type="button" data-panel="navPanel">Slides</button>
+    <button type="button" class="tab-btn on" data-panel="chatPanel">AI Chat</button>
+    <button type="button" class="tab-btn" data-panel="editorPanel">Slide Editor</button>
+    <button type="button" class="tab-btn" data-panel="navPanel">Slides (<span id="mobileSlideCount">7</span>)</button>
   </div>
+
+  <!-- Three-Panel Interactive Workspace -->
   <div class="studio-shell">
+    
+    <!-- LEFT PANEL: AI Chat Assistant (~25-30%) -->
     <aside class="studio-panel show" id="chatPanel">
-      <div class="panel-h"><span>VelQora AI</span><button type="button" class="icon-btn" id="regenBtn">Regenerate</button></div>
-      <div class="config-bar">
-        <input id="presTitle" aria-label="Presentation title" placeholder="Presentation title" maxlength="120">
-        <select id="slideCount" aria-label="Number of slides">
-          <option value="5">5 slides</option>
-          <option value="7" selected>7 slides</option>
-          <option value="10">10 slides</option>
-        </select>
-        <select id="themePick" aria-label="Theme"></select>
-        <select id="tonePick" aria-label="Tone">
-          <option value="professional">Professional</option>
-          <option value="executive">Executive</option>
-          <option value="investor">Investor</option>
-        </select>
-        <button type="button" class="btn btn-coral" id="generateBtn">Generate</button>
+      <div class="panel-h">
+        <div class="panel-h-title">
+          <div class="ai-avatar-badge">VQ</div>
+          <span>VelQora AI</span>
+          <span class="ai-status-indicator" title="Ready • LLM connected in Part 5"></span>
+        </div>
+        <button type="button" class="icon-btn" id="regenBtn" title="Regenerate last response">↻ Regenerate</button>
       </div>
-      <div class="prompts" id="promptRow"></div>
+
+      <!-- Quick Deck Setup Strip -->
+      <div class="chat-config-strip">
+        <span class="deck-chip-text" id="deckSummaryChip">7 Slides · Executive Navy</span>
+        <button type="button" class="link-btn" id="openConfigFromChat">Edit Setup</button>
+      </div>
+
+      <!-- Suggested Prompts Row -->
+      <div class="prompt-suggestions-wrap">
+        <span class="prompt-label">Suggested Prompts</span>
+        <div class="prompts-grid" id="promptRow"></div>
+      </div>
+
+      <!-- Conversation History -->
       <div class="chat-log" id="chatLog" aria-live="polite"></div>
+
+      <!-- Loading / Typing Indicator -->
+      <div class="typing-indicator" id="chatTyping">
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <span>VelQora is crafting your slides...</span>
+      </div>
+
+      <!-- Message Input Form -->
       <form class="chat-form" id="chatForm">
         <label class="sr-only" for="chatInput">Message</label>
         <textarea id="chatInput" maxlength="4000" placeholder="Ask VelQora to create or edit slides…"></textarea>
         <button class="btn btn-coral" type="submit" id="sendBtn">Send</button>
       </form>
     </aside>
+
+    <!-- CENTER PANEL: Slide Editor (~45-50%) -->
     <section class="studio-panel" id="editorPanel">
-      <div class="panel-h"><span id="slideLabel">Slide</span><span id="selHint" class="muted">Select an element to edit</span></div>
-      <div class="canvas-wrap"><div class="slide-canvas" id="slideCanvas" role="img" aria-label="Slide preview"></div></div>
-      <div class="inspector" id="inspector" hidden>
-        <div><label for="elText">Text</label><input id="elText" maxlength="500"></div>
-        <div><label for="elSize">Font size</label><input id="elSize" type="number" min="10" max="72"></div>
-        <div><label for="elWeight">Weight</label><select id="elWeight"><option value="400">Regular</option><option value="600">Semibold</option><option value="700">Bold</option></select></div>
-        <div><label for="elColor">Color</label><input id="elColor" type="color"></div>
-        <div><label for="elAlign">Align</label><select id="elAlign"><option>left</option><option>center</option><option>right</option></select></div>
-        <div><label for="elBg">Fill</label><input id="elBg" type="color"></div>
-        <div><button type="button" class="icon-btn" id="addTextBtn">Add text</button></div>
-        <div><button type="button" class="icon-btn" id="addShapeBtn">Add shape</button></div>
-        <div><button type="button" class="icon-btn" id="delElBtn">Delete element</button></div>
+      <div class="panel-h">
+        <div class="panel-h-title">
+          <span id="slideLabel">Slide 1 of 7</span>
+          <span class="badge-layout" id="layoutPill">Title</span>
+        </div>
+        <span id="selHint" class="sel-hint">Click any element to edit inline</span>
+      </div>
+
+      <div class="canvas-wrap">
+        <div class="slide-canvas-container" id="slideCanvasContainer">
+          <div class="slide-canvas" id="slideCanvas" role="region" aria-label="Selected slide canvas"></div>
+        </div>
+      </div>
+
+      <!-- Quick Editor Formatting Bar -->
+      <div class="editor-quick-bar" id="editorQuickBar">
+        <div class="quick-bar-group">
+          <button type="button" class="quick-bar-btn" id="quickAddCardBtn">+ Add Card</button>
+          <button type="button" class="quick-bar-btn" id="quickAddBulletBtn">+ Add Bullet</button>
+          <button type="button" class="quick-bar-btn" id="quickSwitchLayoutBtn">Change Layout</button>
+        </div>
+        <div class="quick-bar-group">
+          <button type="button" class="quick-bar-btn" id="quickResetSlideBtn">Reset Slide</button>
+        </div>
       </div>
     </section>
+
+    <!-- RIGHT PANEL: Slide Navigator (~20-25%) -->
     <aside class="studio-panel" id="navPanel">
-      <div class="panel-h">Slides <span id="slideCountLabel"></span></div>
-      <div class="thumb-list" id="thumbList"></div>
-      <div class="slide-tools">
-        <button type="button" id="addSlideBtn">Add</button>
-        <button type="button" id="dupSlideBtn">Duplicate</button>
-        <button type="button" id="delSlideBtn">Delete</button>
+      <div class="panel-h">
+        <div class="panel-h-title">
+          <span>Slides</span>
+          <span class="badge" id="slideCountLabel">(7)</span>
+        </div>
+      </div>
+
+      <!-- Navigator Action Bar -->
+      <div class="nav-tools-bar">
+        <button type="button" id="navAddSlideBtn">+ Add Slide</button>
+        <button type="button" id="navDupSlideBtn">Duplicate</button>
+        <button type="button" id="navDelSlideBtn">Delete</button>
+      </div>
+
+      <!-- Vertical Thumbnails List -->
+      <div class="thumb-list" id="thumbList" role="list"></div>
+
+      <div class="nav-tip">
+        <span>💡 Drag cards to reorder • Click to edit</span>
       </div>
     </aside>
+
   </div>
 </main>
+
+<!-- MODAL: Presentation Configuration Setup -->
+<div class="modal-overlay" id="configModal" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <h2 id="configModalTitle">Presentation Setup</h2>
+      <button type="button" class="modal-close-btn" id="closeConfigModalBtn" aria-label="Close setup modal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="config-group">
+        <label for="cfgPresTitle">Presentation Title</label>
+        <input type="text" id="cfgPresTitle" placeholder="e.g. Acme Corp — Strategic Briefing" maxlength="120">
+      </div>
+      <div class="config-group">
+        <label for="cfgSlideCount">Number of Slides</label>
+        <select id="cfgSlideCount">
+          <option value="5">5 slides (Executive Brief)</option>
+          <option value="7" selected>7 slides (Standard Briefing — Recommended)</option>
+          <option value="10">10 slides (Comprehensive Evaluation)</option>
+          <option value="12">12 slides (In-Depth Due Diligence)</option>
+        </select>
+      </div>
+      <div class="config-group">
+        <label for="cfgAudience">Target Audience</label>
+        <select id="cfgAudience">
+          <option value="Executive Leadership" selected>Executive Leadership (C-Suite & VPs)</option>
+          <option value="Potential Client">Potential Client & Commercial Decision Makers</option>
+          <option value="Strategic Partner">Strategic Partner & Alliances</option>
+          <option value="Investors & Board">Investors & Board of Directors</option>
+          <option value="Technical Team">Technical & Engineering Leadership</option>
+        </select>
+      </div>
+      <div class="config-group">
+        <label for="cfgMeetingPurpose">Meeting Purpose</label>
+        <input type="text" id="cfgMeetingPurpose" placeholder="e.g. Strategic Partnership Alignment" maxlength="120">
+      </div>
+      <div class="config-group">
+        <label for="cfgTone">Tone of Voice</label>
+        <select id="cfgTone">
+          <option value="professional" selected>Professional & Authoritative</option>
+          <option value="persuasive">Persuasive & High-Impact</option>
+          <option value="collaborative">Conversational & Collaborative</option>
+          <option value="technical">Technical & Data-Driven</option>
+          <option value="analytical">Formal & Analytical</option>
+        </select>
+      </div>
+      <div class="config-group">
+        <label for="cfgTheme">Design Theme</label>
+        <select id="cfgTheme">
+          <option value="navy" selected>Executive Navy (Midnight & Coral)</option>
+          <option value="light">Clean Minimalist (Studio White & Slate)</option>
+          <option value="coral">VelQora Coral (Obsidian & Crimson)</option>
+          <option value="slate">Cyber Slate (Dark Slate & Cyan)</option>
+          <option value="editorial">Warm Editorial (Parchment & Ink)</option>
+        </select>
+      </div>
+      <div class="config-group">
+        <label for="cfgDetail">Level of Detail</label>
+        <select id="cfgDetail">
+          <option value="summary">Executive Summary (High-Level Takeaways)</option>
+          <option value="balanced" selected>Balanced (Key Insights & Supporting Facts)</option>
+          <option value="deep">In-Depth (Comprehensive Deep Dive & Sources)</option>
+        </select>
+      </div>
+      <div class="config-group">
+        <label>Topics to Include</label>
+        <div class="pills-checkbox-group">
+          <label class="pill-check"><input type="checkbox" name="cfgTopics" value="overview" checked> Executive Overview</label>
+          <label class="pill-check"><input type="checkbox" name="cfgTopics" value="leadership" checked> Key People & Leadership</label>
+          <label class="pill-check"><input type="checkbox" name="cfgTopics" value="developments" checked> Recent Developments</label>
+          <label class="pill-check"><input type="checkbox" name="cfgTopics" value="strategy" checked> Strategic Talking Points</label>
+          <label class="pill-check"><input type="checkbox" name="cfgTopics" value="questions" checked> Key Questions & Risks</label>
+          <label class="pill-check"><input type="checkbox" name="cfgTopics" value="next_steps" checked> Next Steps & Action Plan</label>
+        </div>
+      </div>
+      <div class="config-group">
+        <label>Topics to Exclude</label>
+        <div class="pills-checkbox-group">
+          <label class="pill-check"><input type="checkbox" name="cfgExclude" value="speculation" checked> Unverified Speculation</label>
+          <label class="pill-check"><input type="checkbox" name="cfgExclude" value="raw_metrics"> Raw Unverified Metrics</label>
+          <label class="pill-check"><input type="checkbox" name="cfgExclude" value="internal_ops"> Internal Operational Details</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" id="cancelConfigBtn">Cancel</button>
+      <button type="button" class="btn btn-coral" id="applyConfigBtn">Apply & Rebuild Deck</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Theme Selector -->
+<div class="modal-overlay" id="themeModal" role="dialog" aria-modal="true" aria-labelledby="themeModalTitle">
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <h2 id="themeModalTitle">Select Presentation Theme</h2>
+      <button type="button" class="modal-close-btn" id="closeThemeModalBtn" aria-label="Close theme modal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="themes-grid" id="themesGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Layout Picker -->
+<div class="modal-overlay" id="layoutModal" role="dialog" aria-modal="true" aria-labelledby="layoutModalTitle">
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <h2 id="layoutModalTitle">Choose Slide Layout</h2>
+      <button type="button" class="modal-close-btn" id="closeLayoutModalBtn" aria-label="Close layout modal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="layouts-grid" id="layoutsGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Fullscreen Presentation Preview Player -->
+<div class="preview-modal" id="previewModal" role="dialog" aria-modal="true">
+  <div class="preview-stage-wrap">
+    <div id="previewStage"></div>
+  </div>
+  <div class="preview-controls">
+    <button type="button" id="prevSlideBtn">◀ Prev</button>
+    <span class="preview-counter" id="previewCounter">Slide 1 of 7</span>
+    <button type="button" id="nextSlideBtn">Next ▶</button>
+    <button type="button" id="closePreviewBtn">✕ Exit Preview</button>
+  </div>
+</div>
+
+<!-- MODAL: Export Presentation Options -->
+<div class="modal-overlay" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+  <div class="modal-card">
+    <div class="modal-card-header">
+      <h2 id="exportModalTitle">Export Presentation</h2>
+      <button type="button" class="modal-close-btn" id="closeExportModalBtn" aria-label="Close export modal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="export-options-list">
+        <div class="export-item">
+          <div class="export-item-info">
+            <h4>Print / Save as PDF</h4>
+            <p>High-resolution 16:9 landscape presentation PDF via clean print styling.</p>
+          </div>
+          <button type="button" class="btn btn-ghost" id="exportPdfBtn">Print to PDF →</button>
+        </div>
+        <div class="export-item">
+          <div class="export-item-info">
+            <h4>Export JSON Deck</h4>
+            <p>Download complete presentation data in portable JSON format.</p>
+          </div>
+          <button type="button" class="btn btn-ghost" id="exportJsonBtn">Download JSON →</button>
+        </div>
+        <div class="export-item">
+          <div class="export-item-info">
+            <h4>Copy Markdown Outline</h4>
+            <p>Copy slide titles, kickers, bullets, and talking points to clipboard.</p>
+          </div>
+          <button type="button" class="btn btn-ghost" id="exportMdBtn">Copy Outline →</button>
+        </div>
+        <div class="export-item">
+          <div class="export-item-info">
+            <h4>PowerPoint Presentation (.pptx)</h4>
+            <p>Native PowerPoint export pipeline connects with Bifrost server in Part 5.</p>
+          </div>
+          <button type="button" class="btn btn-coral" id="exportPptxBtn">PowerPoint Export</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="../assets/js/app.js"></script>
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/context.js"></script>
 <script src="../assets/js/nav.js"></script>
 <script src="../assets/js/auth.js"></script>
+<script src="../assets/js/presentation-state.js"></script>
+<script src="../assets/js/slide-renderer.js"></script>
 <script src="../assets/js/studio.js"></script>
 </body>
 </html>
