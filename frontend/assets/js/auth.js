@@ -17,7 +17,30 @@ const VQAuth=(()=>{
 
 (function wireNav(){
   const link=document.getElementById("signinLink");
-  if(!link||!VQAuth.isSignedIn()) return;
+  const mobLink=document.getElementById("mobileAuthLink");
+  const chip=document.getElementById("userChip");
+  if(!VQAuth.isSignedIn()){
+    if(mobLink){
+      mobLink.textContent="Sign In";
+      mobLink.setAttribute("href","signin.html");
+    }
+    return;
+  }
+  const user=VQAuth.getUser()||{};
+  const displayName=user.name||user.email||"Account";
+  if(chip){
+    const initial=String(displayName).trim().charAt(0).toUpperCase();
+    chip.hidden=false;
+    chip.replaceChildren();
+    const b=document.createElement("b"); b.textContent=initial;
+    chip.append(b,document.createTextNode(displayName));
+  }
+  if(mobLink){
+    mobLink.textContent=`Sign Out (${displayName})`;
+    mobLink.setAttribute("href","#");
+    mobLink.addEventListener("click",e=>{e.preventDefault();VQAuth.signOut();location.reload();});
+  }
+  if(!link) return;
   link.textContent="Sign Out";
   link.setAttribute("href","#");
   link.addEventListener("click",e=>{e.preventDefault();VQAuth.signOut();location.reload();});
@@ -26,6 +49,8 @@ const VQAuth=(()=>{
 /* ---------- sign-in / create-account page ---------- */
 (function authPage(){
   const form=document.getElementById("authForm");
+  const backHome=document.getElementById("signinBackHome");
+  if(backHome&&typeof VQContext!=="undefined") backHome.setAttribute("href",VQContext.href("index.html"));
   if(!form) return;
   const $id=i=>document.getElementById(i);
   let mode="login";
@@ -52,7 +77,7 @@ const VQAuth=(()=>{
     try{
       const resp=mode==="login"?await VQApi.login(email,pass):await VQApi.register(email,pass,name);
       VQAuth.setSession(resp);
-      location.href="index.html";
+      location.href=typeof VQContext!=="undefined"?VQContext.href("index.html"):"index.html";
     }catch(err){ fail(err.message||"Something went wrong."); }
     finally{ busy=false; btn.classList.remove("busy"); }
   });

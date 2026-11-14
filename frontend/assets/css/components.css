@@ -201,9 +201,9 @@ h1 em{font-style:italic;background:linear-gradient(110deg,var(--coral) 30%,#ffb1
 .inp:focus-within{border-color:var(--coral);box-shadow:0 0 0 4px rgba(255,88,88,.15)}
 .inp.vq-active>span,.inp.vq-active>.caret{display:none}
 .progress i{transition:width .6s var(--ease)}
-.vq-msg{margin-top:10px;font-size:12px;line-height:1.45;color:#c23a3a;font-weight:500}
+.vq-msg{margin-top:10px;font-size:13px;line-height:1.45;color:var(--bad);font-weight:500;padding:8px 12px;border-radius:var(--r-sm);background:rgba(194,58,58,.08);border:1px solid rgba(194,58,58,.2)}
 .vq-msg[hidden]{display:none}
-.vq-msg.info{color:var(--ink-60)}
+.vq-msg.info{color:var(--navy);background:rgba(20,33,61,.06);border-color:rgba(20,33,61,.12)}
 a.chip{display:inline-block}
 a.chip[href]{cursor:pointer}
 a.chip[href]:hover{background:rgba(255,88,88,.24)}

@@ -1,62 +1,33 @@
-/* ============================================================
-   VelQora research flow (landing-page input card).
-   Real inputs -> POST /api/research -> poll real progress -> render the real briefing.
-   No simulated research: the status text and progress bar mirror what the server reports.
-   ============================================================ */
+/* Dedicated research workspace: POST /api/research, poll status, persist ids, continue to intelligence. */
 (function(){
+  const form=$("#researchForm");
   const goBtn=$("#goBtn");
-  if(!goBtn) return;                                  // not the landing page
+  if(!form||!goBtn) return;
 
   const prog=$("#prog"), bar=prog?prog.querySelector("i"):null;
-  const statusTxt=$("#statusTxt"), badge=$("#badge"), msg=$("#vqMsg");
-  const inputs=[["i1","t1","f1"],["i2","t2","f2"],["i3","t3","f3"],["i4","t4","f4"]].map(([i,t,f])=>({input:$("#"+i),demo:$("#"+t),wrap:$("#"+f)}));
+  const msg=$("#vqMsg"), stageList=$("#stageList");
+  const KNOWN=["queued","validating","searching","processing","date_validation","analyzing","verifying","preparing","completed","failed"];
   const MAX_WAIT_MS=8*60*1000;
-  let running=false, demoActive=true;
+  let running=false;
 
-  /* ---------- small UI helpers ---------- */
-  const setStatus=t=>{ statusTxt.textContent=t; badge.setAttribute("title",t); };
-  const setProgress=p=>{ if(bar) bar.style.width=Math.max(0,Math.min(100,p))+"%"; };
   const showMsg=(t,kind)=>{ if(!t){ msg.hidden=true; msg.textContent=""; return; } msg.textContent=t; msg.className="vq-msg"+(kind==="info"?" info":""); msg.hidden=false; };
+  const setProgress=p=>{ if(!prog||!bar) return; prog.hidden=false; bar.style.width=Math.max(0,Math.min(100,Number(p)||0))+"%"; };
   const setBusy=b=>{
-    goBtn.classList.toggle("busy",b); badge.classList.toggle("busy",b);
-    inputs.forEach(x=>{x.input.disabled=b;});
-    if(b) goBtn.textContent="Researching…";
+    running=b; goBtn.classList.toggle("busy",b); goBtn.disabled=b;
+    form.querySelectorAll("input,select").forEach(el=>el.disabled=b);
+    goBtn.textContent=b?"Researching…":"Start Research";
   };
-
-  /* ---------- the original "typing" intro, now cosmetic only (it never starts research) ---------- */
-  const demo=[["t1","Aurelia Systems","f1"],["t2","linkedin.com/company/aurelia","f2"],["t3","Fri, 14 Nov · 11:00","f3"],["t4","Partnership call","f4"]];
-  const stopDemo=()=>{
-    if(!demoActive) return;
-    demoActive=false;
-    $$(".caret").forEach(c=>c.remove());
-    inputs.forEach(x=>{ x.demo.textContent=""; });
-    $$(".inp").forEach(b=>{ if(document.activeElement!==b.querySelector("input")) b.classList.remove("focus"); });
-  };
-  async function typeDemo(){
-    for(const [id,text,box] of demo){
-      if(!demoActive) return;
-      $$(".inp").forEach(b=>b.classList.remove("focus"));
-      $$(".caret").forEach(c=>c.remove());
-      const el=$("#"+id), wrap=$("#"+box); wrap.classList.add("focus");
-      el.textContent=""; const c=document.createElement("i"); c.className="caret"; wrap.appendChild(c);
-      for(const ch of text){ if(!demoActive) return; el.textContent+=ch; if(!reduce) await sleep(34); }
-      if(!reduce) await sleep(200);
-    }
-    if(!demoActive) return;
-    $$(".caret").forEach(c=>c.remove());
-    $$(".inp").forEach(b=>b.classList.remove("focus"));
+  function renderStages(stage){
+    if(!stageList) return;
+    stageList.replaceChildren();
+    KNOWN.filter(s=>s!=="failed"&&s!=="queued").forEach(s=>{
+      const el=document.createElement("span");
+      el.className="stage-pill"+(s===stage?" on":"");
+      el.textContent=s.replace(/_/g," ");
+      stageList.appendChild(el);
+    });
   }
 
-  /* real inputs: hide the demo text while the user is typing in a field */
-  inputs.forEach(({input,wrap})=>{
-    const sync=()=>wrap.classList.toggle("vq-active",document.activeElement===input||input.value!=="");
-    input.addEventListener("focus",()=>{ stopDemo(); sync(); });
-    input.addEventListener("input",sync);
-    input.addEventListener("blur",sync);
-    input.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); start(); } });
-  });
-
-  /* ---------- polling ---------- */
   async function poll(fetcher,onTick){
     const t0=Date.now(); let fails=0;
     for(;;){
@@ -67,78 +38,83 @@
         fails=0; onTick(r);
         if(r.status==="completed"||r.status==="failed") return r;
       }catch(e){
-        if([401,404,422].includes(e.status)||++fails>=4) throw e;     // tolerate brief network blips
+        if([401,404,422].includes(e.status)||++fails>=4) throw e;
       }
     }
   }
 
-  /* ---------- main flow ---------- */
-  async function start(){
-    if(running) return;                                              // no duplicate submissions
+  async function start(e){
+    if(e) e.preventDefault();
+    if(running) return;
     showMsg("");
-    const val=x=>x.input.value.trim();
-    const name=val(inputs[0]);
+    const name=$("#rName").value.trim();
     if(!name){
-      stopDemo();
-      setStatus("Enter a name to start");
-      showMsg("Type the company or person you're meeting, then press Start Research.","error");
-      inputs[0].input.focus();
+      showMsg("Enter the company or person you are meeting.","error");
+      $("#rName").focus();
       return;
     }
-    const payload={name, url:val(inputs[1])||null, meeting_time:val(inputs[2])||null, purpose:val(inputs[3])||null, auto_brief:true};
-
-    running=true; stopDemo(); setBusy(true); setProgress(0);
-    VelQora.renderIdle();
-    setStatus("Starting research…");
+    const payload={
+      name,
+      url:$("#rUrl").value.trim()||null,
+      meeting_time:$("#rTime").value.trim()||null,
+      purpose:$("#rPurpose").value.trim()||null,
+      entity_type:$("#rType").value||"auto",
+      auto_brief:true
+    };
+    setBusy(true); setProgress(0); renderStages("validating");
     try{
       const job=await VQApi.startResearch(payload);
+      VQContext.write({research_id:job.research_id, briefing_id:job.briefing_id||null, entity_name:name});
       setProgress(job.progress||2);
+      renderStages(job.stage||"searching");
+      showMsg(job.message||"Research started…","info");
       const done=await poll(()=>VQApi.getResearch(job.research_id),r=>{
-        setStatus(r.message||"Researching…"); setProgress(r.progress||0);
+        showMsg(r.message||"Researching…","info");
+        setProgress(r.progress||0);
+        renderStages(r.stage);
+        if(r.briefing_id) VQContext.write({research_id:r.research_id, briefing_id:r.briefing_id});
       });
       if(done.status==="failed"){
-        const e=done.error||{};
-        throw new VQApi.ApiError(0,e.code||"failed",e.message||"Research failed. Please try again.");
+        const err=done.error||{};
+        throw new VQApi.ApiError(0,err.code||"failed",err.message||"Research failed. Please try again.");
       }
-      if(!done.briefing_id) throw new VQApi.ApiError(0,"no_briefing","Research finished but no briefing was produced.");
-
-      let b=await VQApi.getBriefing(done.briefing_id);
-      if(b.status!=="completed") b=await poll(()=>VQApi.getBriefing(done.briefing_id),r=>setStatus(r.message||"Preparing your brief…"));
+      let briefingId=done.briefing_id;
+      if(!briefingId){
+        const gen=await VQApi.generateBriefing(done.research_id,false);
+        briefingId=gen.briefing_id;
+      }
+      let b=await VQApi.getBriefing(briefingId);
+      if(b.status!=="completed") b=await poll(()=>VQApi.getBriefing(briefingId),r=>{
+        showMsg(r.message||"Preparing your brief…","info");
+        setProgress(r.progress||0);
+        renderStages(r.stage||"preparing");
+      });
       if(b.status!=="completed"||!b.briefing) throw new VQApi.ApiError(0,"briefing_failed",(b.error&&b.error.message)||"The briefing could not be generated.");
-
-      setProgress(100);
-      setStatus("Brief ready ✓");
-      await VelQora.reveal(VelQora.toView(b.briefing));
-      afterBrief(b.briefing);
-      goBtn.textContent="Run again ↻";
-    }catch(e){
-      console.error("[VelQora]",e);
-      VelQora.renderIdle();
-      setProgress(0);
-      setStatus(e.code==="network"?"Server unreachable":"Couldn't complete research");
-      showMsg(e.message||"Something went wrong. Please try again.","error");
-      goBtn.textContent="Try again ↻";
+      VQContext.write({research_id:done.research_id, briefing_id:b.briefing_id, entity_name:(b.briefing.entity&&b.briefing.entity.name)||name});
+      setProgress(100); renderStages("completed");
+      location.href=VQContext.href("intelligence.html");
+    }catch(err){
+      console.error("[VelQora]",err);
+      showMsg(err.message||"Something went wrong. Please try again.","error");
+      goBtn.textContent="Try again";
     }finally{
-      running=false; setBusy(false);
+      setBusy(false);
     }
   }
 
-  /* surface honest notes: empty results, missing AI analysis, flagged content */
-  function afterBrief(b){
-    const notes=[...(b.warnings||[])];
-    if(!b.sources.length) notes.unshift("No relevant sources were found. Check the spelling or add the company website.");
-    else if(!b.recent_developments.length && !b.important_news.length) notes.unshift("No dated developments from the last 30 days were found.");
-    if(notes.length) showMsg(notes.slice(0,2).join(" "),"info");
+  form.addEventListener("submit",start);
+
+  const ctx=VQContext.read();
+  if(ctx&&ctx.research_id){
+    VQApi.getResearch(ctx.research_id).then(r=>{
+      if(r.status==="running"||r.status==="queued"){
+        showMsg(r.message||"A research job is still running…","info");
+        start.resume=true;
+      }
+    }).catch(()=>{});
   }
-
-  goBtn.addEventListener("click",start);
-
-  /* ---------- boot ---------- */
-  VelQora.renderIdle();                                   // skeleton, exactly as before
-  setProgress(0);
-  if(reduce){ demo.forEach(([id,t])=>{ $("#"+id).textContent=t; }); }
-  else setTimeout(typeDemo,1700);
   VQApi.health().catch(e=>{
     if(e.code==="network") showMsg("The VelQora backend isn't reachable yet. Start it (see README), then reload this page.","error");
   });
+  const next=$("#nextIntel"); if(next) next.setAttribute("href",VQContext.href("intelligence.html"));
 })();

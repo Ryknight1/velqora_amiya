@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Presentation Studio — VelQora</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%23182444'/%3E%3Cpath d='M10.6 15 18 28' stroke='%23F4EDE0' stroke-width='4.2' stroke-linecap='round'/%3E%3Cpath d='M18 28 29.8 10.5' stroke='%23FF5858' stroke-width='4.4' stroke-linecap='round'/%3E%3Ccircle cx='32.2' cy='30' r='2' fill='%23FF5858'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/variables.css">
+<link rel="stylesheet" href="../assets/css/global.css">
+<link rel="stylesheet" href="../assets/css/animations.css">
+<link rel="stylesheet" href="../assets/css/components.css">
+<link rel="stylesheet" href="../assets/css/studio.css">
+<link rel="stylesheet" href="../assets/css/responsive.css">
+</head>
+<body class="studio-page">
+<div class="sbar" id="sbar"></div>
+<div class="sky"><div class="cloud c1"></div><div class="cloud c2"></div></div>
+<div class="grain"></div>
+<header class="nav" id="nav"></header>
+<main class="app-main">
+  <div class="studio-head">
+    <div>
+      <p class="page-kicker">Workflow · Step 4</p>
+      <h1 class="page-title">Make Your Meeting Presentation</h1>
+      <p class="page-lead">Turn your research into a presentation that makes every conversation count.</p>
+    </div>
+    <div class="studio-actions">
+      <span class="dirty" id="dirtyFlag" hidden>Unsaved changes</span>
+      <button type="button" class="btn btn-ghost" id="undoBtn">Undo</button>
+      <button type="button" class="btn btn-ghost" id="redoBtn">Redo</button>
+      <button type="button" class="btn btn-ghost" id="saveBtn">Save</button>
+      <button type="button" class="btn btn-ghost" id="historyBtn">Versions</button>
+      <button type="button" class="btn btn-ghost" id="previewBtn">Preview Presentation</button>
+      <button type="button" class="btn btn-coral" id="exportBtn">Generate PowerPoint</button>
+    </div>
+  </div>
+  <div class="studio-tabs" role="tablist">
+    <button type="button" class="on" data-panel="chatPanel">AI Chat</button>
+    <button type="button" data-panel="editorPanel">Editor</button>
+    <button type="button" data-panel="navPanel">Slides</button>
+  </div>
+  <div class="studio-shell">
+    <aside class="studio-panel show" id="chatPanel">
+      <div class="panel-h"><span>VelQora AI</span><button type="button" class="icon-btn" id="regenBtn">Regenerate</button></div>
+      <div class="config-bar">
+        <input id="presTitle" aria-label="Presentation title" placeholder="Presentation title" maxlength="120">
+        <select id="slideCount" aria-label="Number of slides">
+          <option value="5">5 slides</option>
+          <option value="7" selected>7 slides</option>
+          <option value="10">10 slides</option>
+        </select>
+        <select id="themePick" aria-label="Theme"></select>
+        <select id="tonePick" aria-label="Tone">
+          <option value="professional">Professional</option>
+          <option value="executive">Executive</option>
+          <option value="investor">Investor</option>
+        </select>
+        <button type="button" class="btn btn-coral" id="generateBtn">Generate</button>
+      </div>
+      <div class="prompts" id="promptRow"></div>
+      <div class="chat-log" id="chatLog" aria-live="polite"></div>
+      <form class="chat-form" id="chatForm">
+        <label class="sr-only" for="chatInput">Message</label>
+        <textarea id="chatInput" maxlength="4000" placeholder="Ask VelQora to create or edit slides…"></textarea>
+        <button class="btn btn-coral" type="submit" id="sendBtn">Send</button>
+      </form>
+    </aside>
+    <section class="studio-panel" id="editorPanel">
+      <div class="panel-h"><span id="slideLabel">Slide</span><span id="selHint" class="muted">Select an element to edit</span></div>
+      <div class="canvas-wrap"><div class="slide-canvas" id="slideCanvas" role="img" aria-label="Slide preview"></div></div>
+      <div class="inspector" id="inspector" hidden>
+        <div><label for="elText">Text</label><input id="elText" maxlength="500"></div>
+        <div><label for="elSize">Font size</label><input id="elSize" type="number" min="10" max="72"></div>
+        <div><label for="elWeight">Weight</label><select id="elWeight"><option value="400">Regular</option><option value="600">Semibold</option><option value="700">Bold</option></select></div>
+        <div><label for="elColor">Color</label><input id="elColor" type="color"></div>
+        <div><label for="elAlign">Align</label><select id="elAlign"><option>left</option><option>center</option><option>right</option></select></div>
+        <div><label for="elBg">Fill</label><input id="elBg" type="color"></div>
+        <div><button type="button" class="icon-btn" id="addTextBtn">Add text</button></div>
+        <div><button type="button" class="icon-btn" id="addShapeBtn">Add shape</button></div>
+        <div><button type="button" class="icon-btn" id="delElBtn">Delete element</button></div>
+      </div>
+    </section>
+    <aside class="studio-panel" id="navPanel">
+      <div class="panel-h">Slides <span id="slideCountLabel"></span></div>
+      <div class="thumb-list" id="thumbList"></div>
+      <div class="slide-tools">
+        <button type="button" id="addSlideBtn">Add</button>
+        <button type="button" id="dupSlideBtn">Duplicate</button>
+        <button type="button" id="delSlideBtn">Delete</button>
+      </div>
+    </aside>
+  </div>
+</main>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/context.js"></script>
+<script src="../assets/js/nav.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/studio.js"></script>
+</body>
+</html>

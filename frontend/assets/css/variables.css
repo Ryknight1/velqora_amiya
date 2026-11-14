@@ -8,4 +8,6 @@
   --serif:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
   --ease:cubic-bezier(.22,1,.36,1);
   --spring:cubic-bezier(.34,1.56,.64,1);
+  --ok:#2ea06e; --warn:#c9892a; --bad:#c23a3a;
+  --panel:rgba(255,255,255,.78);
 }

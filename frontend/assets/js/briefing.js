@@ -183,7 +183,8 @@ const BriefPage={
   },
   async init(){
     const root=$("#briefRoot"); if(!root) return;
-    const id=new URLSearchParams(location.search).get("id")||"";
+    const q=new URLSearchParams(location.search);
+    const id=q.get("id")||q.get("briefing_id")||(typeof VQContext!=="undefined"&&VQContext.read()&&VQContext.read().briefing_id)||"";
     const say=(t,err)=>{root.innerHTML=`<div class="brief-head"><h1>${err?"Briefing unavailable":"Loading briefing…"}</h1><p class="vq-note" style="margin-top:10px">${esc(t)}</p><div class="brief-actions"><a class="btn btn-ghost" href="index.html">← Back to VelQora</a></div></div>`;};
     if(!/^[a-f0-9]{32}$/.test(id)) return say("This link is missing a valid briefing id.",true);
     say("Fetching your briefing…");

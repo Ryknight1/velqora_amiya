@@ -1,0 +1,13 @@
+.meet-grid{display:grid;grid-template-columns:1.4fr .8fr;gap:16px;margin-top:20px}
+.meet-card{padding:18px;border-radius:var(--r-md);background:var(--panel);border:1px solid rgba(255,255,255,.9);box-shadow:var(--shadow-1);margin-bottom:14px}
+.meet-card h2{font-family:var(--serif);font-size:20px;font-weight:500;margin-bottom:8px}
+.meet-card ul{list-style:none}
+.meet-card li{padding:6px 0 6px 14px;position:relative;font-size:14px}
+.meet-card li::before{content:"";position:absolute;left:0;top:13px;width:6px;height:6px;border-radius:50%;background:var(--coral)}
+.check-list{list-style:none}
+.check-list li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;position:static}
+.check-list li::before{display:none}
+.check-list input{margin-top:4px;accent-color:var(--coral);width:16px;height:16px}
+.check-list label{font-size:14px;cursor:pointer}
+.check-list input:checked + label{text-decoration:line-through;color:var(--ink-60)}
+@media(max-width:860px){.meet-grid{grid-template-columns:1fr}}

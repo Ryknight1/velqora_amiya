@@ -5,12 +5,15 @@
   .scene{height:780px;max-width:640px;margin:0 auto;width:100%}
   .strip-grid{grid-template-columns:repeat(2,1fr)}
 }
+.mobile-only-auth{display:none}
 @media(max-width:860px){
   .links{position:absolute;top:calc(100% + 10px);left:0;right:0;flex-direction:column;padding:12px;border-radius:24px;
-    background:rgba(250,246,239,.96);backdrop-filter:blur(18px);box-shadow:var(--shadow-3d);opacity:0;pointer-events:none;transform:translateY(-10px);transition:.35s var(--ease)}
+    background:rgba(250,246,239,.96);backdrop-filter:blur(18px);box-shadow:var(--shadow-3d);opacity:0;pointer-events:none;transform:translateY(-10px);transition:.35s var(--ease);max-height:70vh;overflow:auto}
   .links.open{opacity:1;pointer-events:auto;transform:none}
   .burger{display:flex}
   .signin{display:none}
+  .nav-r .user-chip{display:none}
+  .mobile-only-auth{display:block;border-top:1px solid var(--ink-12);margin-top:6px;padding-top:6px}
 }
 @media(max-width:640px){
   .nav .btn-coral{padding:10px 16px;font-size:13.5px}

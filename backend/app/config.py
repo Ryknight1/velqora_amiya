@@ -58,7 +58,16 @@ class Settings:
     # --- app ---
     app_env: str = "development"
     log_level: str = "INFO"
-    cors_origins: List[str] = field(default_factory=list)
+    cors_origins: List[str] = field(
+        default_factory=lambda: [
+            "http://localhost:5500",
+            "http://127.0.0.1:5500",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
+    )
     frontend_dir: Path = PROJECT_DIR / "frontend"
     trust_proxy: bool = False
 

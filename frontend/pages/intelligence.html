@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Intelligence — VelQora</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%23182444'/%3E%3Cpath d='M10.6 15 18 28' stroke='%23F4EDE0' stroke-width='4.2' stroke-linecap='round'/%3E%3Cpath d='M18 28 29.8 10.5' stroke='%23FF5858' stroke-width='4.4' stroke-linecap='round'/%3E%3Ccircle cx='32.2' cy='30' r='2' fill='%23FF5858'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/variables.css">
+<link rel="stylesheet" href="../assets/css/global.css">
+<link rel="stylesheet" href="../assets/css/animations.css">
+<link rel="stylesheet" href="../assets/css/components.css">
+<link rel="stylesheet" href="../assets/css/intelligence.css">
+<link rel="stylesheet" href="../assets/css/responsive.css">
+</head>
+<body>
+<div class="sbar" id="sbar"></div>
+<div class="sky"><div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div><div class="cloud c4"></div></div>
+<div class="spot" id="spot"></div>
+<div class="grain"></div>
+<header class="nav" id="nav"></header>
+<main class="app-main">
+  <div class="page-wrap">
+    <p class="page-kicker">Workflow · Step 2</p>
+    <h1 class="page-title" id="intelTitle">Research Intelligence</h1>
+    <p class="page-lead" id="intelLead">Verified findings and source status from your latest briefing.</p>
+    <div class="intel-tabs" role="tablist">
+      <button type="button" id="tabIntel" role="tab" aria-selected="true" aria-controls="panelIntel">Research Intelligence</button>
+      <button type="button" id="tabVerify" role="tab" aria-selected="false" aria-controls="panelVerify">Source Verification</button>
+    </div>
+    <div id="panelIntel" class="intel-panel" role="tabpanel"></div>
+    <div id="panelVerify" class="intel-panel" role="tabpanel" hidden></div>
+    <div class="flow-nav">
+      <a class="btn btn-ghost" href="research.html">← New Research</a>
+      <a class="btn btn-coral" id="toMeeting" href="meeting.html">Meeting Prep →</a>
+    </div>
+  </div>
+</main>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/context.js"></script>
+<script src="../assets/js/nav.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/intelligence.js"></script>
+</body>
+</html>
