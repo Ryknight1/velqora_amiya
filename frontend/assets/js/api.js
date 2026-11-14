@@ -49,6 +49,10 @@ const VQApi=(()=>{
     getBriefing:(id,opts)=>request("/api/briefing/"+enc(id),opts),
     register:(email,password,name)=>request("/api/auth/register",{method:"POST",body:{email,password,name:name||null},auth:false}),
     login:(email,password)=>request("/api/auth/login",{method:"POST",body:{email,password},auth:false}),
-    me:()=>request("/api/auth/me")
+    me:()=>request("/api/auth/me"),
+    createPresentation:payload=>request("/api/presentation/create",{method:"POST",body:payload,timeout:60000}),
+    presentationChat:payload=>request("/api/presentation/chat",{method:"POST",body:payload,timeout:60000}),
+    getPresentation:(id,opts)=>request("/api/presentation/"+enc(id),opts),
+    updatePresentation:(id,presentation)=>request("/api/presentation/"+enc(id),{method:"PUT",body:{presentation}})
   };
 })();

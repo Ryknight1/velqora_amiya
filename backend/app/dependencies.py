@@ -10,11 +10,12 @@ from fastapi import Depends, Request
 
 from .config import Settings
 from .database.connection import Database
-from .database.models import SCHEMA_SQL, BriefingRepository, ResearchRepository, UserRepository
+from .database.models import SCHEMA_SQL, BriefingRepository, PresentationRepository, ResearchRepository, UserRepository
 from .exceptions import AuthError, RateLimitedError
 from .security import decode_token
 from .services.bifrost_service import BifrostService
 from .services.briefing_service import BriefingService
+from .services.presentation_ai_service import PresentationAIService
 from .services.research_service import ResearchService
 from .services.tavily_service import TavilyService
 
@@ -47,9 +48,11 @@ class Container:
     users: UserRepository
     research_repo: ResearchRepository
     briefing_repo: BriefingRepository
+    presentation_repo: PresentationRepository
     tavily: TavilyService
     bifrost: BifrostService
     research: ResearchService
+    presentation_ai: PresentationAIService
     limiter: RateLimiter
 
     def startup(self) -> None:
@@ -65,11 +68,13 @@ class Container:
 def build_container(settings: Settings, tavily=None, bifrost=None) -> Container:
     db = Database(settings.database_path)
     research_repo, briefing_repo = ResearchRepository(db), BriefingRepository(db)
+    presentation_repo = PresentationRepository(db)
     tavily = tavily or TavilyService(settings)
     bifrost = bifrost or BifrostService(settings)
     research = ResearchService(settings, research_repo, briefing_repo, tavily, BriefingService(settings, bifrost))
-    return Container(settings, db, UserRepository(db), research_repo, briefing_repo, tavily, bifrost, research,
-                     RateLimiter())
+    presentation_ai = PresentationAIService(settings, bifrost, presentation_repo, briefing_repo, research_repo)
+    return Container(settings, db, UserRepository(db), research_repo, briefing_repo, presentation_repo,
+                     tavily, bifrost, research, presentation_ai, RateLimiter())
 
 
 def get_container(request: Request) -> Container:

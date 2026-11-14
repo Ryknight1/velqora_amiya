@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import __version__
-from .api.routes import auth, briefing, health, research
+from .api.routes import auth, briefing, health, presentation, research
 from .config import Settings, get_settings
 from .dependencies import Container, build_container
 from .exceptions import VelQoraError
@@ -130,7 +130,7 @@ def create_app(settings: Settings | None = None, container: Container | None = N
         return response
 
     # ---------------------------------------------------------------- routes
-    for module in (health, research, briefing, auth):
+    for module in (health, research, briefing, auth, presentation):
         app.include_router(module.router, prefix="/api")
 
     @app.get("/api", include_in_schema=False)

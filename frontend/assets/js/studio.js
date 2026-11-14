@@ -586,15 +586,84 @@
     }
   }
 
-  function executePrompt(promptText) {
+  async function executePrompt(promptText) {
     lastPromptExecuted = promptText;
     addChatMessage(promptText, "user");
     setTypingState(true);
 
-    setTimeout(() => {
+    const activeIdx = presentationState.getActiveSlideIndex();
+    const activeSlide = presentationState.getActiveSlide();
+    const deck = presentationState.getDeck();
+
+    // Check if user is asking for a full new presentation e.g. "Create a 7-slide presentation"
+    const isNewDeckRequest = /create\s+a\s+\d+-slide/i.test(promptText) || /generate\s+\d+-slide/i.test(promptText);
+
+    try {
+      if (isNewDeckRequest && typeof VQApi !== "undefined" && VQApi.createPresentation) {
+        const countMatch = promptText.match(/\b(\d+)-slide\b/i);
+        const count = countMatch ? parseInt(countMatch[1], 10) : (deck.config ? deck.config.slideCount : 7);
+        const ctx = typeof VQContext !== "undefined" ? VQContext.read() : null;
+        const res = await VQApi.createPresentation({
+          research_id: (ctx && ctx.research_id) || deck.research_id,
+          briefing_id: (ctx && ctx.briefing_id) || deck.briefing_id,
+          title: deck.title,
+          prompt: promptText,
+          slide_count: count,
+          audience: deck.config ? deck.config.audience : "Executive Leadership",
+          purpose: deck.config ? deck.config.purpose : "Strategic Partnership Alignment",
+          tone: deck.config ? deck.config.tone : "professional",
+          theme: deck.theme || "navy"
+        });
+
+        if (res && res.slides) {
+          presentationState.setDeck(res);
+          addChatMessage(`Generated a complete **${res.slides.length}-slide executive presentation** using verified research intelligence and Gemini Flash.`, "ai");
+          setTypingState(false);
+          return;
+        }
+      }
+
+      // Standard conversational slide modification via POST /api/presentation/chat
+      if (typeof VQApi !== "undefined" && VQApi.presentationChat) {
+        const historyItems = [];
+        const msgEls = chatLog ? chatLog.querySelectorAll(".msg") : [];
+        msgEls.forEach(el => {
+          const role = el.classList.contains("user") ? "user" : "assistant";
+          const text = el.innerText.replace(/^VelQora AI\s+\d+:\d+\s+/, "").trim();
+          if (text) historyItems.push({ role, content: text });
+        });
+
+        const res = await VQApi.presentationChat({
+          presentation_id: deck.id || deck.presentation_id || "pres_draft",
+          message: promptText,
+          selected_slide_id: activeSlide ? (activeSlide.id || activeSlide.slide_id) : null,
+          selected_slide_index: activeIdx,
+          history: historyItems.slice(-4),
+          presentation: deck
+        });
+
+        if (res && res.presentation) {
+          presentationState.setDeck(res.presentation);
+          if (typeof res.affected_slide_index === "number") {
+            presentationState.setActiveSlide(res.affected_slide_index);
+          }
+          addChatMessage(res.explanation || "Updated presentation successfully.", "ai");
+          setTypingState(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("AI backend call encountered an error; falling back gracefully:", err);
+      // Graceful local handling to prevent UI disruption if Bifrost gateway is unreachable
       processAgentAction(promptText);
+      addChatMessage("*(Gemini Flash via Bifrost gateway was temporarily unreachable; applied structured local transformation)*", "ai");
       setTypingState(false);
-    }, 600);
+      return;
+    }
+
+    // Default local fallback if no VQApi
+    processAgentAction(promptText);
+    setTypingState(false);
   }
 
   function setTypingState(isTyping) {
@@ -846,7 +915,7 @@
     if (configModal) configModal.classList.add("active");
   }
 
-  function applyDeckConfiguration() {
+  async function applyDeckConfiguration() {
     const title = (cfgPresTitle && cfgPresTitle.value.trim()) || "Meeting Presentation";
     const slideCount = parseInt(cfgSlideCount ? cfgSlideCount.value : "7", 10) || 7;
     const audience = cfgAudience ? cfgAudience.value : "Executive Leadership";
@@ -862,6 +931,40 @@
     const topicsExclude = [];
     document.querySelectorAll('input[name="cfgExclude"]:checked').forEach(cb => topicsExclude.push(cb.value));
 
+    setTypingState(true);
+    addChatMessage(`Rebuilding presentation for **${audience}** with **${slideCount} slides** in **${tone}** tone...`, "ai");
+
+    const ctx = typeof VQContext !== "undefined" ? VQContext.read() : null;
+    const researchId = (ctx && ctx.research_id) || null;
+    const briefingId = (ctx && ctx.briefing_id) || null;
+
+    try {
+      if (typeof VQApi !== "undefined" && VQApi.createPresentation) {
+        const res = await VQApi.createPresentation({
+          research_id: researchId,
+          briefing_id: briefingId,
+          title: title,
+          slide_count: slideCount,
+          audience: audience,
+          purpose: purpose,
+          tone: tone,
+          theme: theme,
+          detail_level: detail,
+          topics_include: topicsInclude,
+          topics_exclude: topicsExclude
+        });
+
+        if (res && res.slides) {
+          presentationState.setDeck(res);
+          addChatMessage(`Successfully generated **${res.slides.length} slides** with **${theme}** theme.`, "ai");
+          setTypingState(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Backend createPresentation failed; using local generator:", err);
+    }
+
     presentationState.updateConfig({
       title,
       slideCount,
@@ -874,6 +977,7 @@
       topicsExclude
     }, true, activeBriefingData);
 
+    setTypingState(false);
     addChatMessage(`Updated presentation configuration for **${audience}** with **${slideCount} slides** in **${tone}** tone.`);
   }
 

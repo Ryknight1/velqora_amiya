@@ -840,10 +840,21 @@ class PresentationState {
     return md;
   }
 
+  setDeck(deckData) {
+    if (!deckData) return;
+    this._pushSnapshot();
+    this.deck = this._sanitizeDeck(deckData);
+    this.isDirty = false;
+    this.lastSavedAt = new Date();
+    this._emit("change", { source: "setDeck" });
+    this._emit("slideChange", { activeIndex: this.deck.activeSlideIndex });
+  }
+
   _sanitizeDeck(data) {
     if (!data || typeof data !== "object") return this._createDefaultDeck();
     const deck = Object.assign({}, data);
-    deck.id = deck.id || "pres_" + Math.random().toString(36).substr(2, 9);
+    deck.id = deck.id || deck.presentation_id || "pres_" + Math.random().toString(36).substr(2, 9);
+    deck.presentation_id = deck.id;
     deck.title = deck.title || "Meeting Presentation";
     deck.theme = PresentationState.THEMES.some(t => t.id === deck.theme) ? deck.theme : "navy";
     deck.config = Object.assign({
@@ -858,10 +869,18 @@ class PresentationState {
       topicsExclude: ["speculation"]
     }, deck.config || {});
 
-    deck.slides = Array.isArray(deck.slides) && deck.slides.length ? deck.slides : this._buildDefault7Slides("Acme Corp", "Strategic Partnership");
+    deck.slides = Array.isArray(deck.slides) && deck.slides.length ? deck.slides.map((s, idx) => {
+      const slide = Object.assign({}, s);
+      slide.id = slide.id || slide.slide_id || `slide_${idx + 1}`;
+      slide.slide_id = slide.id;
+      return slide;
+    }) : this._buildDefault7Slides("Acme Corp", "Strategic Partnership");
+
     deck.activeSlideIndex = (typeof deck.activeSlideIndex === "number" && deck.activeSlideIndex >= 0 && deck.activeSlideIndex < deck.slides.length)
       ? deck.activeSlideIndex
-      : 0;
+      : (typeof deck.active_slide_index === "number" && deck.active_slide_index >= 0 && deck.active_slide_index < deck.slides.length)
+        ? deck.active_slide_index
+        : 0;
     deck.selectedElement = null;
     return deck;
   }

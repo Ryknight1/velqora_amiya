@@ -46,13 +46,27 @@ CREATE TABLE IF NOT EXISTS briefings (
     updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_briefings_research ON briefings(research_id);
+CREATE TABLE IF NOT EXISTS presentations (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    research_id TEXT,
+    briefing_id TEXT,
+    title TEXT NOT NULL,
+    theme TEXT NOT NULL DEFAULT 'navy',
+    presentation_json TEXT NOT NULL,
+    history_json TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_presentations_research ON presentations(research_id);
 """
 
 _JSON_FIELDS = {"request_json", "entity_json", "window_json", "sources_json", "warnings_json", "error_json",
-                "briefing_json"}
+                "briefing_json", "presentation_json", "history_json"}
 _RESEARCH_COLS = {"status", "stage", "progress", "message", "window_json", "sources_json", "warnings_json",
                   "error_json", "briefing_id"}
 _BRIEFING_COLS = {"status", "stage", "progress", "message", "briefing_json", "error_json"}
+_PRESENTATION_COLS = {"title", "theme", "presentation_json", "history_json", "research_id", "briefing_id", "user_id"}
 
 
 def _decode(row) -> Optional[Dict[str, Any]]:
@@ -162,3 +176,42 @@ class BriefingRepository:
             cur = c.execute("UPDATE briefings SET status='failed', stage='failed', message=?, error_json=?, updated_at=? "
                             "WHERE status IN ('queued','running')", ("Interrupted by a server restart.", err, utc_now_iso()))
             return cur.rowcount
+
+
+class PresentationRepository:
+    def __init__(self, db: Database):
+        self.db = db
+
+    def create(self, presentation_id: str, user_id: Optional[str], research_id: Optional[str],
+               briefing_id: Optional[str], title: str, theme: str, presentation: dict,
+               history: Optional[list] = None) -> None:
+        now = utc_now_iso()
+        with self.db.connect() as c:
+            c.execute(
+                "INSERT INTO presentations (id, user_id, research_id, briefing_id, title, theme, "
+                "presentation_json, history_json, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (presentation_id, user_id, research_id, briefing_id, title, theme,
+                 json.dumps(presentation), json.dumps(history or []), now, now)
+            )
+
+    def update(self, presentation_id: str, **fields: Any) -> None:
+        cols = _encode(fields, _PRESENTATION_COLS)
+        cols["updated_at"] = utc_now_iso()
+        assignments = ", ".join(f"{k} = ?" for k in cols)
+        with self.db.connect() as c:
+            c.execute(f"UPDATE presentations SET {assignments} WHERE id = ?", (*cols.values(), presentation_id))
+
+    def get(self, presentation_id: str) -> Optional[dict]:
+        with self.db.connect() as c:
+            return _decode(c.execute("SELECT * FROM presentations WHERE id = ?", (presentation_id,)).fetchone())
+
+    def latest_for_research(self, research_id: str) -> Optional[dict]:
+        with self.db.connect() as c:
+            return _decode(c.execute("SELECT * FROM presentations WHERE research_id = ? ORDER BY created_at DESC LIMIT 1",
+                                     (research_id,)).fetchone())
+
+    def list_for_user(self, user_id: str) -> list[dict]:
+        with self.db.connect() as c:
+            rows = c.execute("SELECT * FROM presentations WHERE user_id = ? ORDER BY updated_at DESC", (user_id,)).fetchall()
+            return [_decode(r) for r in rows if r]
+
